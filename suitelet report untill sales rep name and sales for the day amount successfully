@@ -87,17 +87,20 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     'Dec': 'custrecord_wbt_salesman_field_december'
                 };
 
+                var monthField = monthFieldMap[monthName];
+                log.debug('Month Field:', monthField);
                 // Get today's date
                 var today = format.format({
                     value: new Date(),
                     type: format.Type.DATE
                 });// Initialize an object to store sales rep info
-             // Initialize an object to store sales rep info
-      var salesRepInfo = {};
-var totalAmount = 0;
+                // Initialize an object to store sales rep info
+                var salesRepInfo = {};
+                var totalAmount = 0;
+                var internalIds={};
 
-// Initialize the sales rep search
-var salesRepSearch = search.create({
+               // Initialize the sales rep search
+    var salesRepSearch = search.create({
     type: "customrecord_impal_wbt_salesman",
     filters: [
         ["custrecord_wbt_salesman_branch", "anyof", selectedBranch],
@@ -111,6 +114,7 @@ var salesRepSearch = search.create({
 });
 
 salesRepSearch.run().each(function(result) {
+     internalIds = result.getValue({name: "internalid"});
     var salesRepId = result.getValue("custrecord_impal_sales_executive_m_s");
     var salesRepName = result.getText("custrecord_impal_sales_executive_m_s");
 
@@ -133,6 +137,25 @@ salesRepSearch.run().each(function(result) {
 });
 
 log.debug("Sales Rep Information", salesRepInfo);
+// Declare the global variable outside the loop
+var monthtotalArray = [];
+
+for (var m = 0; m < internalIds.length; m++) {
+    var src_rec1 = record.load({
+        type: 'customrecord_impal_wbt_salesman',
+        id: internalIds[m]
+    });
+
+    var sales_exe_id = src_rec1.getValue({
+        fieldId: 'custrecord_impal_sales_executive_m_s'
+    });
+    
+    var salesExecutive = src_rec1.getText("custrecord_impal_sales_executive_m_s");
+
+    // Retrieve the month value and add to monthtotalArray
+    var monthValue = parseFloat(src_rec1.getValue({ fieldId: monthField }));
+    monthtotalArray.push(monthValue);
+}
 
 // Check if we have any valid sales reps in salesRepInfo
 if (Object.keys(salesRepInfo).length === 0) {
@@ -140,7 +163,7 @@ if (Object.keys(salesRepInfo).length === 0) {
     return;  // Skip further search and processing if no valid sales reps found
 }
 
-// Second search: Get sales amounts by filtering with valid sales rep IDs
+// Get sales amounts by filtering with valid sales rep IDs
 var invoiceSearch = search.create({
     type: "invoice",
     filters: [
@@ -181,12 +204,14 @@ var invoiceSearch2 = search.create({
         ["type", "anyof", "CustInvc"],
         "AND",
         // Again use the same filter to allow for both valid sales rep IDs and records without a sales rep
-        ["salesrep", "anyof", Object.keys(salesRepInfo), "isempty"]
+        ["salesrep", "anyof", Object.keys(salesRepInfo), "isempty"],
+        "AND",
+        ["trandate", "within", formattedStartDate,formattedEndDate]
     ],
     columns: [
         search.createColumn({ name: "salesrep", summary: "GROUP" }),
         search.createColumn({ name: "amount", summary: "SUM" })
-    ]
+    ]   
 });
 
 var cum_totalAmount = 0;
@@ -235,16 +260,23 @@ for (var salesRepId in salesRepInfo) {
     }
 }
 
+var cum_amt_total =0;
+var total_cum_amt_percentage = 0; // New variable to accumulate the total percentage
+
 for (var i = 0; i < salesRepNames.length; i++) {
     var salesRepName = salesRepNames[i];
     var salesRepAmount = salesRepAmounts[i];
     var cum_salesRepAmount = cum_salesRepAmounts[i];
+    var mo 
 
+   cum_amt_total = cum_totalAmount ? (cum_salesRepAmount / cum_totalAmount).toFixed(2) : 0;
+
+   total_cum_amt_percentage += parseFloat(cum_amt_total);
    
         // Construct a new table row with individual cells (TD) for each sales rep
                  td = '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + salesRepName + '</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+monthValue+'</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
@@ -252,7 +284,7 @@ for (var i = 0; i < salesRepNames.length; i++) {
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + cum_salesRepAmount + '</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;"></td>';
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_amt_total+'</td>';
              
                  tr += '<tr>' + td + '</tr>';
              
@@ -275,10 +307,10 @@ for (var i = 0; i < salesRepNames.length; i++) {
     <tr style="background-color: #f2f2f2;">\
       <td style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\WBT 4.2</td>\
        <td colspan="7" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\WHITE BOARD TRACKER</td>\
-       <td colspan="2" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal;align: center; vertical-align: middle;">1-Apr-24</td>\
+       <td colspan="2" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal;align: center; vertical-align: middle;">'+monthNames+'</td>\
     </tr>\
     <tr style="background-color: #f2f2f2;">\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; letter-spacing: normal; text-align: center; vertical-align: middle;">\Apr-24</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; letter-spacing: normal; text-align: center; vertical-align: middle;">'+monthNames+'</td>\
       <td style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal; text-align: center; vertical-align: middle;">\BRANCH NAME</td>\
       <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; letter-spacing: normal; text-align: center; vertical-align: middle;">\Working days for month</td>\
       <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">26</td>\
@@ -316,18 +348,6 @@ for (var i = 0; i < salesRepNames.length; i++) {
       <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Cus Salesmen Share</td>\
     </tr>\
     <!-- Rows with Date Values -->\
-    <tr>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">\Apr-24</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">\Apr-24</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">1-Apr-24</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">4-Aug-23</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">1-Apr-24</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">1-Apr-24</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">1-Apr-24</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">4-Apr-23</td>\
-    </tr>\
     <!-- items map -->\
      '+tr+'\
     <!-- total map -->\
@@ -342,7 +362,7 @@ for (var i = 0; i < salesRepNames.length; i++) {
         <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_totalAmount+'</td>\
         <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
         <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'</td>\
     </tr>\
   </table>\
 <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;top:1%;">\
@@ -425,13 +445,10 @@ for (var i = 0; i < salesRepNames.length; i++) {
   // Send error response to the user
   context.response.write({
     output: "An error occurred: " + error.message,
-  });
-  
- 
+  }); 
 }
-
 }
 return {
     onRequest: onRequest
-    };
-  });
+   };
+});
