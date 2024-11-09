@@ -3,7 +3,8 @@
  * @NScriptType Suitelet
  */
 define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], function (record, render, search, runtime, file, format) {
-    function onRequest(context) {
+  // completed day and month
+function onRequest(context) {
         try {
             var rec_id = context.request.parameters.recordid;
             log.debug('rec_id', rec_id);
@@ -93,125 +94,197 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     type: format.Type.DATE
                 });// Initialize an object to store sales rep info
              // Initialize an object to store sales rep info
-var salesRepInfo = {};
+             var salesRepInfo = {};
 
-// Initialize a variable to store the total amount
-var totalAmount = 0;
-
-// First Search: Fetch all relevant sales reps dynamically based on branch and period
-var salesRepSearch = search.create({
-    type: "customrecord_impal_wbt_salesman",
-    filters: [
-        ["custrecord_wbt_salesman_branch", "anyof", selectedBranch], // assuming selectedBranch is passed in context
-        "AND",
-        ["custrecord_wbt_salesman_accounting_perio", "is", selectedPeriod1] // assuming selectedPeriod1 is passed in context
-    ],
-    columns: [
-        search.createColumn({name: "internalid"}), // Sales rep internal ID
-        search.createColumn({name: "custrecord_impal_sales_executive_m_s"}) // Sales executive ID
-    ]
-});
-
-// Store each sales rep with a default amount of 0
-salesRepSearch.run().each(function(result) {
-    var salesRepId = result.getValue("custrecord_impal_sales_executive_m_s");
-    var salesRepName = result.getText("custrecord_impal_sales_executive_m_s");
-
-    log.debug('salesRepId', salesRepId);
-    log.debug('salesRepName', salesRepName);
-
-    // Add each sales rep to salesRepInfo with amount initialized to 0
-    salesRepInfo[salesRepId] = {
-        name: salesRepName,
-        amount: 0
-    };
-    return true;
-});
-
-// Log the sales reps retrieved to verify
-log.debug("Retrieved Sales Reps", salesRepInfo);
-
-// Second search to get sales amounts for each rep
-var invoiceSearch = search.create({
-    type: "invoice",
-    settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
-    filters: [
-        ["type", "anyof", "CustInvc"], 
-        "AND", 
-        ["salesrep", "anyof", Object.keys(salesRepInfo)] // Use dynamically retrieved sales rep IDs
-    ],
-    columns: [
-        search.createColumn({
-            name: "salesrep",
-            summary: "GROUP",
-            label: "Sales Rep"
-        }),
-        search.createColumn({
-            name: "amount",
-            summary: "SUM",
-            label: "Amount"
-        })
-    ]
-});
-
-// Update salesRepInfo with actual amounts from the invoice search
-invoiceSearch.run().each(function(result) {
-    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-    var totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" });
-    totalAmountForRep = totalAmountForRep ? parseFloat(totalAmountForRep) : 0;
-
-    if (salesRepInfo[salesRepId]) {
-        salesRepInfo[salesRepId].amount = totalAmountForRep;
-        totalAmount += totalAmountForRep; // Add to the total sum
-    }
-    return true;
-});
-
-// Now you have salesRepInfo and totalAmount ready to pass or return
-log.debug("Sales Rep Information (with Amounts)", salesRepInfo);
-log.debug("Total Amount Sum", totalAmount);
-
-// Arrays to store sales rep names and amounts separately
-var salesRepNames = [];
-var salesRepAmounts = [];
-var tr = ''; // Initialize the table row variable
-var serialNumber = 1; // Initialize serial number
-var td = ''; // Table data (TD) variable
-
-// Loop through salesRepInfo to populate salesRepNames and salesRepAmounts arrays
-for (var salesRepId in salesRepInfo) {
-    if (salesRepInfo.hasOwnProperty(salesRepId)) {
-        // Push name and amount to respective arrays
-        salesRepNames.push(salesRepInfo[salesRepId].name);
-        salesRepAmounts.push(salesRepInfo[salesRepId].amount);
-    }
-}
-
-// Generate HTML table rows
-for (var i = 0; i < salesRepNames.length; i++) {
-    var salesRepName = salesRepNames[i];
-    var salesRepAmount = salesRepAmounts[i];
-
-    // Construct a new table row with individual cells (TD) for each sales rep
-    td = '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
-         '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + salesRepName + '</td>' +
-         '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
-         '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
-         '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
-         '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
-         '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + salesRepAmount + '</td>' +
-         '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>';
-
-    // Append this new row to the table
-    tr += '<tr>' + td + '</tr>';
-
-    // Increment the serial number for the next row
-    serialNumber++;
-}
-
-// Log or send the table rows and total amount as a response
-log.debug("Generated Table Rows", tr);
-log.debug("Total Sales Amount", totalAmount); // Display the total amount in logs
+             // Initialize a variable to store the total amount
+             var totalAmount = 0;
+             
+             // First Search: Fetch all relevant sales reps dynamically based on branch and period
+             var salesRepSearch = search.create({
+                 type: "customrecord_impal_wbt_salesman",
+                 filters: [
+                     ["custrecord_wbt_salesman_branch", "anyof", selectedBranch], // assuming selectedBranch is passed in context
+                     "AND",
+                     ["custrecord_wbt_salesman_accounting_perio", "is", selectedPeriod1] // assuming selectedPeriod1 is passed in context
+                 ],
+                 columns: [
+                     search.createColumn({name: "internalid"}), // Sales rep internal ID
+                     search.createColumn({name: "custrecord_impal_sales_executive_m_s"}) // Sales executive ID
+                 ]
+             });
+             
+             // Store each sales rep with a default amount of 0
+             salesRepSearch.run().each(function(result) {
+                 var salesRepId = result.getValue("custrecord_impal_sales_executive_m_s");
+                 var salesRepName = result.getText("custrecord_impal_sales_executive_m_s");
+             
+                 log.debug('salesRepId', salesRepId);
+                 log.debug('salesRepName', salesRepName);
+             
+                 // Add each sales rep to salesRepInfo with amount initialized to 0 and cumulativeSales initialized
+                 salesRepInfo[salesRepId] = {
+                     name: salesRepName,
+                     amount: 0,
+                     cumulativeSales: { totalAmount: 0 } // Initialize cumulative sales here
+                 };
+                 return true;
+             });
+             
+             // Log the sales reps retrieved to verify
+             log.debug("Retrieved Sales Reps", salesRepInfo);
+             
+             // Second search to get sales amounts for each rep
+             var invoiceSearch = search.create({
+                 type: "invoice",
+                 settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
+                 filters: [
+                     ["type", "anyof", "CustInvc"], 
+                     "AND", 
+                     ["salesrep", "anyof", Object.keys(salesRepInfo)], // Use dynamically retrieved sales rep IDs
+                     "AND", 
+                     ["trandate","on",today]
+                 ],
+                 columns: [
+                     search.createColumn({
+                         name: "salesrep",
+                         summary: "GROUP",
+                         label: "Sales Rep"
+                     }),
+                     search.createColumn({
+                         name: "amount",
+                         summary: "SUM",
+                         label: "Amount"
+                     })
+                 ]
+             });
+             
+             // Update salesRepInfo with actual amounts from the invoice search
+             invoiceSearch.run().each(function(result) {
+                 var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                 var totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" });
+                 totalAmountForRep = totalAmountForRep ? parseFloat(totalAmountForRep) : 0;
+             
+                 if (salesRepInfo[salesRepId]) {
+                     salesRepInfo[salesRepId].amount = totalAmountForRep;
+                     totalAmount += totalAmountForRep; // Add to the total sum
+                 }
+                 return true;
+             });
+             
+             // Now you have salesRepInfo and totalAmount ready to pass or return
+             log.debug("Sales Rep Information (with Amounts)", salesRepInfo);
+             log.debug("Total Amount Sum", totalAmount);
+             
+             // Second search for cumulative month to get sales amounts for each rep
+             var invoiceSearch2 = search.create({
+                 type: "invoice",
+                 settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
+                 filters: [
+                     ["type", "anyof", "CustInvc"], 
+                     "AND", 
+                     ["salesrep", "anyof", Object.keys(salesRepInfo)] // Use dynamically retrieved sales rep IDs
+                 ],
+                 columns: [
+                     search.createColumn({
+                         name: "salesrep",
+                         summary: "GROUP",
+                         label: "Sales Rep"
+                     }),
+                     search.createColumn({
+                         name: "amount",
+                         summary: "SUM",
+                         label: "Amount"
+                     })
+                 ]
+             });
+             
+             var cum_totalAmount = 0;
+             
+             // Update salesRepInfo with cumulative amounts from the invoice search
+             invoiceSearch2.run().each(function(result) {
+                 var cum_salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                 var cum_totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" });
+             
+                 cum_totalAmountForRep = cum_totalAmountForRep ? parseFloat(cum_totalAmountForRep) : 0;
+             
+                 // Check if the salesRepId exists in salesRepInfo
+                 if (salesRepInfo[cum_salesRepId]) {
+                     // Initialize cumulative sales if it doesn't exist
+                     if (!salesRepInfo[cum_salesRepId].cumulativeSales) {
+                         salesRepInfo[cum_salesRepId].cumulativeSales = { totalAmount: 0 };
+                     }
+             
+                     // Update cumulative sales for each rep with the total amount
+                     salesRepInfo[cum_salesRepId].cumulativeSales.totalAmount += cum_totalAmountForRep;
+             
+                     // Update total amount (sum of all reps)
+                     cum_totalAmount += cum_totalAmountForRep;
+             
+                     // Optionally, log the updated sales rep information
+                     log.debug("Sales Rep ID: " + cum_salesRepId, salesRepInfo[cum_salesRepId]);
+                 } else {
+                     log.debug("Sales Rep not found:", cum_salesRepId); // Log if the sales rep doesn't exist
+                 }
+             
+                 return true;
+             });
+             
+             // Now you have salesRepInfo and cumulative totalAmount ready to pass or return
+             log.debug("Sales Rep Information (with Cumulative Sales)", salesRepInfo);
+             log.debug("Total Sales Amount", cum_totalAmount);
+             
+             // Arrays to store sales rep names and amounts separately
+             var cum_salesRepNames = [];
+             var cum_salesRepAmounts = [];
+             var salesRepNames = [];
+             var salesRepAmounts = [];
+             var tr = ''; // Initialize the table row variable
+             var serialNumber = 1; // Initialize serial number
+             var td = ''; // Table data (TD) variable
+             
+             // Loop through salesRepInfo to populate salesRepNames and salesRepAmounts arrays
+             for (var salesRepId in salesRepInfo) {
+                 if (salesRepInfo.hasOwnProperty(salesRepId)) {
+                     // Push name and amount to respective arrays
+                     salesRepNames.push(salesRepInfo[salesRepId].name);
+                     salesRepAmounts.push(salesRepInfo[salesRepId].amount);
+                 }
+             }
+             
+             // Loop through cum_salesRepInfo to populate cum_salesRepNames and cum_salesRepAmounts arrays
+             for (var salesRepId in salesRepInfo) {
+                 if (salesRepInfo.hasOwnProperty(salesRepId)) {
+                     // Push name and cumulative amount to respective arrays
+                     cum_salesRepNames.push(salesRepInfo[salesRepId].name);
+                     cum_salesRepAmounts.push(salesRepInfo[salesRepId].cumulativeSales.totalAmount); // Access the cumulative sales totalAmount
+                 }
+             }
+             
+             // Generate HTML table rows
+             for (var i = 0; i < salesRepNames.length; i++) {
+                 var salesRepName = salesRepNames[i];
+                 var salesRepAmount = salesRepAmounts[i];
+                 var cum_salesRepAmount = cum_salesRepAmounts[i];
+             
+                 // Construct a new table row with individual cells (TD) for each sales rep
+                 td = '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + salesRepName + '</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+salesRepAmount+'</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + cum_salesRepAmount + '</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">&nbsp;</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;"></td>';
+             
+                 tr += '<tr>' + td + '</tr>';
+             
+                 serialNumber++;
+             }
+             
+             log.debug("Generated Sales Rep Table Rows", tr);
 
             }
 
@@ -387,4 +460,3 @@ return {
     onRequest: onRequest
     };
   });
-
