@@ -332,17 +332,17 @@ for (var i = 0; i < salesRepNames.length; i++) {
 
 
         // Construct a new table row with individual cells (TD) for each sales rep
-                 td = '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + salesRepName + '</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+forTheMonth+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+avgDay+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+currentTargetTillDay+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+sales_target_for+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+salesRepAmount+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + cum_salesRepAmount + '</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+sales_plus_minus+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+salesVstarget+'%'+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_amt_total+'</td>';
+                 td = '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
+                      '<td align ="left" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + salesRepName + '</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal; background-color: rgb(239, 239, 238);">'+forTheMonth+'</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+avgDay+'</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+currentTargetTillDay+'</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+sales_target_for+'</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;  background-color: rgb(137, 211, 127)">'+salesRepAmount+'</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;  background-color: rgb(137, 211, 127)">' + cum_salesRepAmount + '</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+sales_plus_minus+'</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+salesVstarget+'%'+'</td>' +
+                      '<td align ="center" style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+cum_amt_total+'</td>';
              
                  tr += '<tr>' + td + '</tr>';
              
@@ -384,26 +384,26 @@ for (var i = 0; i < salesRepNames.length; i++) {
   <table style="width: 100%; border-collapse: collapse;">\
     <!-- Header Row -->\
     <tr style="background-color: #4CAF50; color: white;">\
-      <td colspan="11" style="align:center;border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Sales</td>\
+      <td colspan="11" style="align:center;border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Sales</td>\
     </tr>\
     <!-- Sub-header Rows -->\
     <tr style="background-color: #f9f9f9;">\
-      <td rowspan="2" style="border: 1px solid #ddd;background-color: #f2f2f2; padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">\SI.No</td>\
-      <td rowspan="2" style="border: 1px solid #ddd; background-color: #f2f2f2;padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal;">\Sales Executive M/s</td>\
-      <td colspan="4" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Target Lacs</td>\
-      <td colspan="3" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Sales Lacs</td>\
-      <td colspan="3" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Cum % of Sales</td>\
+      <td rowspan="2" style="border: 1px solid #ddd;background-color: #f2f2f2; padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(255, 238, 192);">SI.No</td>\
+      <td rowspan="2" style="border: 1px solid #ddd; background-color: #f2f2f2;padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(255, 238, 192);">Sales Executive M/s</td>\
+      <td align ="center" colspan="4" style="border: 1px solid #ddd; padding: 4px;color: white; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;background-color: rgb(255, 9, 17)">Target Lacs</td>\
+      <td align ="center"  colspan="3" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal; color: white;  background-color: rgb(108, 102, 218)">Sales Lacs</td>\
+      <td align ="center" colspan="3" style="border: 1px solid #ddd; padding: 4px;  font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal; color: white;  background-color: rgb(108, 102, 218)">Cum % of Sales</td>\
     </tr>\
     <tr style="background-color: #f2f2f2;">\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\For the Month</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Avg/Day</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Cum Target till Date</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Sales Target for</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Sales for the Day</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Cumulative Sales</td>\
-      <td style="border: 1px solid #ddd; padding:4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Sales +/-</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Sales vs Target</td>\
-      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Cus Salesmen Share</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">For the Month</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Avg/Day</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cum Target till Date-(Avg/Day)</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Target for</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales for the Day</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cumulative sales as of</td>\
+      <td style="border: 1px solid #ddd; padding:4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Cumulative Plus/Minus</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales vs Target</td>\
+      <td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cus Salesmen Share</td>\
     </tr>\
     <!-- Rows with Date Values -->\
     <!-- items map -->\
@@ -411,16 +411,16 @@ for (var i = 0; i < salesRepNames.length; i++) {
     <!-- total map -->\
         <tr>\
       <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-      <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
-        <td  style="border: 1px solid #ddd; padding:4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+TotalmonthtotalArray+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+avgDayTotal+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+currTarDayTotal+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_sales_target_for+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalAmount+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_totalAmount+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'</td>\
+      <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding:4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+TotalmonthtotalArray+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+avgDayTotal+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+currTarDayTotal+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_sales_target_for+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalAmount+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_totalAmount+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
+        <td align = "center" style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'</td>\
     </tr>\
   </table>\
 <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;top:1%;">\
