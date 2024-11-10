@@ -412,15 +412,15 @@ for (var i = 0; i < salesRepNames.length; i++) {
         <tr>\
       <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
       <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
-        <td  style="border: 1px solid #ddd; padding:4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+TotalmonthtotalArray+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+avgDayTotal+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+currTarDayTotal+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_sales_target_for+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalAmount+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_totalAmount+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'</td>\
+        <td  style="border: 1px solid #ddd; padding:4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+TotalmonthtotalArray+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+avgDayTotal+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+currTarDayTotal+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_sales_target_for+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalAmount+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_totalAmount+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'</td>\
     </tr>\
   </table>\
 <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;top:1%;">\
