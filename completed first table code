@@ -296,6 +296,10 @@ var total_Sales_Plus_Minus =0;
 var salesVstarget = 0;
 var totalSalesVstarget = 0;
 
+function roundToTwoDecimals(value) {
+  return Math.round(value * 100) / 100;
+}
+
 
 var cum_amt_total =0;
 var total_cum_amt_percentage = 0; // New variable to accumulate the total percentage
@@ -307,23 +311,23 @@ for (var i = 0; i < salesRepNames.length; i++) {
      forTheMonth = monthtotalArray[i]
    cum_amt_total = cum_totalAmount ? (cum_salesRepAmount / cum_totalAmount).toFixed(2) : 0;
 
-   total_cum_amt_percentage += parseFloat(cum_amt_total);
+   total_cum_amt_percentage += roundToTwoDecimals(cum_amt_total);
    
 
    //calculation part variables
-    avgDay=(monthtotalArray[i]/workingDayForMOn)
-    avgDayTotal += avgDay;
+    avgDay=roundToTwoDecimals(monthtotalArray[i]/workingDayForMOn)||0;
+    avgDayTotal += roundToTwoDecimals(avgDay);
 
-    currentTargetTillDay = (avgDay*completedWorkDay)
-    currTarDayTotal +=currentTargetTillDay;
+    currentTargetTillDay =  roundToTwoDecimals(avgDay*completedWorkDay)||0;
+    currTarDayTotal +=roundToTwoDecimals(currentTargetTillDay);
 
-    sales_target_for = ((forTheMonth-cum_salesRepAmount)/balance_For_day)
-    total_sales_target_for +=sales_target_for;
+    sales_target_for = roundToTwoDecimals((forTheMonth-cum_salesRepAmount)/balance_For_day)||0;
+    total_sales_target_for +=roundToTwoDecimals(sales_target_for);
     
-    sales_plus_minus = (cum_salesRepAmount - currentTargetTillDay)
-    total_Sales_Plus_Minus += sales_plus_minus;
+    sales_plus_minus =  roundToTwoDecimals(cum_salesRepAmount - currentTargetTillDay)||0;
+    total_Sales_Plus_Minus += roundToTwoDecimals(sales_plus_minus);
 
-    salesVstarget =( cum_salesRepAmount/forTheMonth)+'%';
+    salesVstarget = roundToTwoDecimals(cum_salesRepAmount/forTheMonth) ||0;
     totalSalesVstarget += salesVstarget;
 
 
@@ -337,7 +341,7 @@ for (var i = 0; i < salesRepNames.length; i++) {
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+salesRepAmount+'</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">' + cum_salesRepAmount + '</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+sales_plus_minus+'</td>' +
-                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+salesVstarget+'</td>' +
+                      '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+salesVstarget+'%'+'</td>' +
                       '<td style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_amt_total+'</td>';
              
                  tr += '<tr>' + td + '</tr>';
@@ -415,7 +419,7 @@ for (var i = 0; i < salesRepNames.length; i++) {
         <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalAmount+'</td>\
         <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_totalAmount+'</td>\
         <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
-        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalSalesVstarget+'</td>\
+        <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
         <td  style="border: 1px solid #ddd; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'</td>\
     </tr>\
   </table>\
