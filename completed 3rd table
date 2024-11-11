@@ -1,0 +1,746 @@
+/**
+ * @NApiVersion 2.x
+ * @NScriptType Suitelet
+ */
+define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], function (record, render, search, runtime, file, format) {
+  function onRequest(context) {
+      try {
+          var rec_id = context.request.parameters.recordid;
+          log.debug('rec_id', rec_id);
+          if (!rec_id) {
+              throw new Error("Record ID is missing from request parameters.");
+          }
+
+          // Load the invoice record using the rec_id
+          var loadPO = record.load({
+              type: 'customrecord_impal_wbt_sm_brch_rp',
+              id: rec_id
+          });
+
+          var selectedBranch = loadPO.getValue({
+              fieldId: 'custrecord_impal_brch'
+          });
+          log.debug("branch", selectedBranch);
+
+          var selectedPeriod = loadPO.getText({
+              fieldId: 'custrecord_impal_acc_pr'
+          });
+          log.debug("accountpr", selectedPeriod);
+
+          var selectedPeriod1 = loadPO.getValue({
+              fieldId: 'custrecord_impal_acc_pr'
+          });
+
+          if (selectedPeriod) {
+              log.debug('if entered');
+              var trimmedPeriod = selectedPeriod.trim();
+              log.debug('trimmedPeriod', trimmedPeriod);
+              var monthName = trimmedPeriod.split(' ')[6];  //["FY", "2024", ":", "Q1", "2024", ":", "May", "2023"]
+              log.debug('monthName', monthName);
+              var periodParts = selectedPeriod.trim().split(' ');
+              log.debug('periodParts', periodParts);
+              var monthNames = periodParts[6];
+              log.debug('monthNames', monthNames);
+              var year = parseInt(periodParts[7]);
+              log.debug('year', year);
+
+              var monthMap = {
+                  'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3,
+                  'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7,
+                  'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+              };
+
+              var monthNumber = monthMap[monthNames];
+              var startDate = new Date(year, monthNumber, 1);
+              log.debug("before formatting start date", startDate);
+              var endDate = new Date(year, monthNumber + 1, 0);
+              log.debug("before formatting end date", endDate);
+
+              var formattedStartDate = format.format({
+                  value: startDate,
+                  type: format.Type.DATE
+              });
+              var formattedEndDate = format.format({
+                  value: endDate,
+                  type: format.Type.DATE
+              });
+              log.debug('Start Date:', formattedStartDate);
+              log.debug('End Date:', formattedEndDate);
+
+              log.debug('Trimmed Period:', trimmedPeriod);
+              log.debug('Month Name:', monthName);
+              log.debug('Year:', year);
+
+              // Map month abbreviations to their corresponding fields
+              var monthFieldMap = {
+                  'Jan': 'custrecord_wbt_salesman_field_jan',
+                  'Feb': 'custrecord_wbt_salesman_field_feb',
+                  'Mar': 'custrecord_wbt_salesman_field_march',
+                  'Apr': 'custrecord_wbt_salesman_field_april',
+                  'May': 'custrecord_wbt_salesman_field_may',
+                  'Jun': 'custrecord_wbt_salesman_field_june',
+                  'Jul': 'custrecord_wbt_salesman_field_july',
+                  'Aug': 'custrecord_wbt_salesman_field_august',
+                  'Sep': 'custrecord_wbt_salesman_field_september',
+                  'Oct': 'custrecord_wbt_salesman_field_october',
+                  'Nov': 'custrecord_wbt_salesman_field_november',
+                  'Dec': 'custrecord_wbt_salesman_field_december'
+              };
+              var monthField = monthFieldMap[monthName];
+              log.debug('Month Field:', monthField);
+
+              // Get today's date
+              var today = format.format({
+                  value: new Date(),
+                  type: format.Type.DATE
+              });
+              log.debug('today',today)
+              
+              // Initialize an object to store sales rep info
+              // Initialize an object to store sales rep info
+              var salesRepInfo = [];
+              var totalAmount = 0;
+              var internalIds=[];
+
+             // Initialize the sales rep search
+  var salesRepSearch = search.create({
+  type: "customrecord_impal_wbt_salesman",
+  filters: [
+      ["custrecord_wbt_salesman_branch", "anyof", selectedBranch],
+      "AND",
+      ["custrecord_wbt_salesman_accounting_perio", "is", selectedPeriod1]
+  ],
+  columns: [
+      search.createColumn({name: "internalid"}),
+      search.createColumn({name: "custrecord_impal_sales_executive_m_s"})
+  ]
+});
+
+salesRepSearch.run().each(function(result) {
+       internalIds.push(result.getValue({ name: "internalid" }));
+      var salesRepId = result.getValue("custrecord_impal_sales_executive_m_s");
+      var salesRepName = result.getText("custrecord_impal_sales_executive_m_s");
+
+  log.debug('salesRepId', salesRepId);
+  log.debug('salesRepName', salesRepName);
+  log.debug('internalIds', internalIds);
+  log.debug('internalIds.length', internalIds.length);
+  // Check if the salesRepId is valid (not empty or undefined)
+  if (salesRepId) {
+      salesRepInfo[salesRepId] = {
+          name: salesRepName,
+          amount: 0,
+          cumulativeSales: { totalAmount: 0 }
+      };
+  } else {
+      // If no valid salesRepId, skip this entry and proceed to the next one
+      log.debug('Skipping invalid sales rep', salesRepName);
+  }
+
+  return true;
+});
+
+log.debug("Sales Rep Information", salesRepInfo);
+
+// Initialize monthtotalArray and TotalmonthtotalArray
+var monthtotalArray = [];
+var TotalmonthtotalArray = 0;
+
+for (var m = 0; m < internalIds.length; m++) {
+  var src_rec1 = record.load({
+      type: 'customrecord_impal_wbt_salesman',
+      id: internalIds[m]
+  });
+
+  // Get the month value and add to monthtotalArray
+  var monthValue = parseFloat(src_rec1.getValue({ fieldId: monthField })) || 0;
+  monthtotalArray.push(monthValue);
+}
+log.debug(' internalIds.length;', internalIds.length)
+
+// Initialize TotalmonthtotalArray to 0
+var TotalmonthtotalArray = 0;
+// Calculate the cumulative total of month values using a loop
+for (var i = 0; i < monthtotalArray.length; i++) {
+  TotalmonthtotalArray += monthtotalArray[i];
+}
+log.debug("TotalmonthtotalArray (Cumulative Total)", TotalmonthtotalArray);
+log.debug("monthtotalArray (Individual Month Values)", monthtotalArray);
+log.debug("TotalmonthtotalArray (Cumulative Total)", TotalmonthtotalArray);
+
+var monthValue = 0;
+// Assuming itemSublist is the variable representing your item sublist
+for (var i = 0; i < monthtotalArray.length; i++) {
+monthValue = monthtotalArray[i];
+}
+
+// Check if we have any valid sales reps in salesRepInfo
+if
+(Object.keys(salesRepInfo).length === 0) {       
+        log.debug("No valid sales reps found. Skipping further search.");            
+// HTML content to display when no sales rep is found
+      var htmlContent ='<html><head><title>No Sales Rep Found</title></head><body>';          
+      htmlContent +='<h1>No Sales Rep Found for the given period.</h1>';   
+      htmlContent +='<p>Please check the details and try again.</p>';     
+      htmlContent +='</body></html>';            
+// Write the HTML response to the page
+context.response.write(htmlContent);
+return ;
+// Stop further search and processing if no valid sales reps found
+}
+
+// Second search: Get sales amounts by filtering with valid sales rep IDs
+var invoiceSearch = search.create({
+  type: "invoice",
+  filters: [
+      ["type", "anyof", "CustInvc"],
+      "AND",
+      // Use "anyof" to check for valid salesrep internal ids, or "isempty" to handle cases where salesrep is empty
+      ["salesrep", "anyof", Object.keys(salesRepInfo)],
+      "AND",
+      ["trandate", "on", today]
+  ],
+  columns: [
+      search.createColumn({ name: "salesrep", summary: "GROUP" }),
+      search.createColumn({ name: "amount", summary: "SUM" })
+  ]
+});
+
+invoiceSearch.run().each(function(result) {
+  var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+  var totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" });
+
+  totalAmountForRep = totalAmountForRep ? parseFloat(totalAmountForRep) : 0;
+
+  if (salesRepInfo[salesRepId]) {
+      salesRepInfo[salesRepId].amount = totalAmountForRep;
+      totalAmount += totalAmountForRep;
+  }
+  return true;
+});
+log.debug("Sales Rep Information (with Amounts)", salesRepInfo);
+log.debug("Total Amount", totalAmount);
+
+// Handle the case where there might be no sales rep by excluding those records in the next search
+var invoiceSearch2 = search.create({    
+  type: "invoice",
+  filters: [
+      ["type", "anyof", "CustInvc"],
+      "AND",
+      // Again use the same filter to allow for both valid sales rep IDs and records without a sales rep
+      ["salesrep", "anyof", Object.keys(salesRepInfo)],
+      "AND",
+      ["trandate", "within", formattedStartDate,formattedEndDate]
+  ],
+  columns: [
+      search.createColumn({ name: "salesrep", summary: "GROUP" }),
+      search.createColumn({ name: "amount", summary: "SUM" })
+  ]   
+});
+
+var cum_totalAmount = 0;
+invoiceSearch2.run().each(function(result) {
+  var cum_salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+  var cum_totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" });
+  cum_totalAmountForRep = cum_totalAmountForRep ? parseFloat(cum_totalAmountForRep) : 0;
+
+  if (salesRepInfo[cum_salesRepId]) {
+      if (!salesRepInfo[cum_salesRepId].cumulativeSales) {
+          salesRepInfo[cum_salesRepId].cumulativeSales = { totalAmount: 0 };
+      }
+
+      salesRepInfo[cum_salesRepId].cumulativeSales.totalAmount += cum_totalAmountForRep;
+      cum_totalAmount += cum_totalAmountForRep;
+  }
+
+  return true;
+});
+
+log.debug("Sales Rep Information (with Cumulative Sales)", salesRepInfo);
+log.debug("Total Sales Amount", cum_totalAmount);
+
+ // sales for the day for new dealers
+ var newDealersTotalAmount = 0;
+ var processedInvoiceIds = [];       // Array to store unique invoice IDs
+ var uniqueInvoiceAmounts = [];       // Array to store each unique invoice amount
+ 
+ var invoiceSearchToday = search.create({
+     type: search.Type.INVOICE,
+     filters: [
+         ["type", "anyof", "CustInvc"],
+         "AND",
+         ["salesrep", "anyof", Object.keys(salesRepInfo)],
+         "AND",
+         ["trandate", "on", today],
+         "AND",
+         ["customer.custentity_customer_date_creations_", "is", "T"]
+     ],
+     columns: [
+         search.createColumn({ name: "amount" }),
+         search.createColumn({ name: "internalid" })
+     ]
+ });
+ 
+ invoiceSearchToday.run().each(function (invoiceResult) {
+     var invoiceID = invoiceResult.getValue({ name: "internalid" });
+     var amountToday = parseFloat(invoiceResult.getValue({ name: "amount" })) || 0;
+ 
+     // Check if invoiceID is already processed
+     if (processedInvoiceIds.indexOf(invoiceID) === -1) {
+         processedInvoiceIds.push(invoiceID);    // Add ID to processed invoices array
+         newDealersTotalAmount += amountToday;        // Update total amount
+         uniqueInvoiceAmounts.push(amountToday); // Add amount to unique amounts array
+        log.debug('Unique Invoice Amount Today:', amountToday);
+     }
+     return true;
+ });
+ 
+log.debug('Today Total Amount:', newDealersTotalAmount);
+log.debug('Unique Invoice Amounts Array:', uniqueInvoiceAmounts); // Array of unique amounts
+ 
+ // for a month new dealer
+ var cumulativeNewDealerAmount = 0;
+ var invoiceList = [];
+ 
+ var invoiceSearch = search.create({
+     type: search.Type.INVOICE,
+     filters: [
+         ["type", "anyof", "CustInvc"],
+         "AND",
+         ["salesrep", "anyof", Object.keys(salesRepInfo)],
+         "AND",
+         ["trandate", "within", formattedStartDate, formattedEndDate],
+         "AND",
+         ["customer.custentity_customer_date_creations_", "is", "T"]
+     ],
+     columns: [
+         search.createColumn({ name: "internalid" }),
+         search.createColumn({ name: "amount" }),
+         search.createColumn({ name: "postingperiod" })
+     ]
+ });
+ 
+ invoiceSearch.run().each(function (invoiceResult) {
+     var invoiceID = invoiceResult.getValue("internalid");
+     var amount = parseFloat(invoiceResult.getValue("amount")) || 0;
+     var postingPeriod = invoiceResult.getValue("postingperiod");
+     
+     cumulativeNewDealerAmount += amount;
+     invoiceList.push({
+         id: invoiceID,
+         amount: amount,
+         postingPeriod: postingPeriod
+     });
+ 
+    log.debug('Invoice ID:', invoiceID);
+    log.debug('Invoice Amount:', amount);
+    log.debug('Posting Period:', postingPeriod);
+     return true;
+ });
+log.debug('Cumulative Amount:', cumulativeNewDealerAmount);
+log.debug('Invoice List:', invoiceList);
+
+// new product
+var newProductTotal = 0;
+ // Replace Set with an array
+var invoiceSearchToday = search.create({
+    type: search.Type.INVOICE,
+    filters: [
+        ["type", "anyof", "CustInvc"],
+        "AND",
+        ["salesrep", "anyof", Object.keys(salesRepInfo)],
+        "AND",
+        ["trandate", "on", today],
+        "AND",
+        ["item.custitem_impal_new_product", "is", "T"]
+    ],
+    columns: [
+      search.createColumn({ name: "salesrep", summary: "GROUP" }),
+      search.createColumn({ name: "amount", summary: "SUM" })
+    ]
+});
+
+invoiceSearchToday.run().each(function(result) {
+  var new_product_SalesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+  var new_prod_TotalAmount = result.getValue({ name: "amount", summary: "SUM" });
+
+  new_prod_TotalAmount = new_prod_TotalAmount ? parseFloat(new_prod_TotalAmount) : 0;
+
+  if (salesRepInfo[new_product_SalesRepId]) {
+      salesRepInfo[new_product_SalesRepId].amount = new_prod_TotalAmount;
+      newProductTotal += new_prod_TotalAmount;
+  }
+  return true;
+});
+log.debug("Sales Rep Information (with Amounts)", salesRepInfo);
+log.debug("Total Amount", newProductTotal);
+// new product cum sales  for month
+var new_cum_ProductTotal = 0;
+ // Replace Set with an array
+var invoiceSearchToday = search.create({
+    type: search.Type.INVOICE,
+    filters: [
+        ["type", "anyof", "CustInvc"],
+        "AND",
+        ["salesrep", "anyof", Object.keys(salesRepInfo)],
+        "AND",
+        ["trandate", "within", formattedStartDate,formattedEndDate],
+        "AND",
+        ["item.custitem_impal_new_product", "is", "T"]
+    ],
+    columns: [
+      search.createColumn({ name: "salesrep", summary: "GROUP" }),
+      search.createColumn({ name: "amount", summary: "SUM" })
+    ]
+});
+
+invoiceSearchToday.run().each(function(result) {
+  var new_cum_product_SalesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+  var new_cum_prod_TotalAmount = result.getValue({ name: "amount", summary: "SUM" });
+
+  new_cum_prod_TotalAmount = new_cum_prod_TotalAmount ? parseFloat(new_cum_prod_TotalAmount) : 0;
+
+  if (salesRepInfo[new_cum_product_SalesRepId]) {
+      salesRepInfo[new_cum_product_SalesRepId].amount = new_cum_prod_TotalAmount;
+      new_cum_ProductTotal += new_cum_prod_TotalAmount;
+  }
+  return true;
+});
+log.debug("Sales Rep Information (with Amounts)", salesRepInfo);
+log.debug("Total Amount", new_cum_ProductTotal);
+
+// Prepare table data for output
+var cum_salesRepNames = [];
+var cum_salesRepAmounts = [];
+var salesRepNames = [];
+var salesRepAmounts = [];
+var new_Pro_SalesRepNames = [];
+var new_Pro_SalesRepAmounts = [];
+var cum_Pro_M_SalesRepNames = [];
+var cum_Pro_M_SalesRepAmounts = [];
+var tr = '';
+var serialNumber = 1;
+var td = '';
+var tr2 = '';
+var td2 = '';
+
+for (var salesRepId in salesRepInfo) {
+  if (salesRepInfo.hasOwnProperty(salesRepId)) {
+      salesRepNames.push(salesRepInfo[salesRepId].name);
+      salesRepAmounts.push(salesRepInfo[salesRepId].amount);
+  }
+}
+
+for (var salesRepId in salesRepInfo) {
+  if (salesRepInfo.hasOwnProperty(salesRepId)) {
+      cum_salesRepNames.push(salesRepInfo[salesRepId].name);
+      cum_salesRepAmounts.push(salesRepInfo[salesRepId].cumulativeSales.totalAmount);
+  }
+}
+
+
+for (var salesRepId in salesRepInfo) {
+  if (salesRepInfo.hasOwnProperty(salesRepId)) {
+      new_Pro_SalesRepNames.push(salesRepInfo[salesRepId].name);
+      new_Pro_SalesRepAmounts.push(salesRepInfo[salesRepId].amount);
+  }
+}
+
+for (var salesRepId in salesRepInfo) {
+  if (salesRepInfo.hasOwnProperty(salesRepId)) {
+      cum_Pro_M_SalesRepNames.push(salesRepInfo[salesRepId].name);
+      cum_Pro_M_SalesRepAmounts.push(salesRepInfo[salesRepId].amount);
+  }
+}
+
+var workingDayForMOn = 26;
+var completedWorkDay = 1;
+var balance_For_day =25;
+//calculation part variables
+var avgDay =0;
+var avgDayTotal=0;
+var currentTargetTillDay =0;
+var currTarDayTotal =0;
+var sales_target_for = 0;
+var total_sales_target_for =0;
+var sales_plus_minus =0;
+var total_Sales_Plus_Minus =0;
+var salesVstarget = 0;
+var totalSalesVstarget = 0;
+//new product
+var target_15_0f_sales =0;
+var newSales_Product = 0;
+var cum_Sales_product_month = 0;
+function roundToTwoDecimals(value) {
+return Math.round(value * 100) / 100;
+}
+
+var cum_amt_total =0;
+var total_cum_amt_percentage = 0; // New variable to accumulate the total percentage
+var forTheMonth=0;
+//new product
+var target_15_total = 0;
+var new_Sales_achived_vs_target = 0;
+var total_New_Sales_achived_vs_target =0;
+
+for (var i = 0; i < salesRepNames.length; i++) {
+  var salesRepName = salesRepNames[i];
+  var salesRepAmount = salesRepAmounts[i];
+  var cum_salesRepAmount = cum_salesRepAmounts[i];
+      forTheMonth = monthtotalArray[i];
+
+      newSales_Product = new_Pro_SalesRepAmounts[i] ;
+      cum_Sales_product_month = cum_Pro_M_SalesRepAmounts[i];
+
+
+      cum_amt_total = cum_totalAmount ? (cum_salesRepAmount / cum_totalAmount).toFixed(2) : 0;
+
+      total_cum_amt_percentage += roundToTwoDecimals(cum_amt_total);
+ 
+      //new product %
+      new_Sales_achived_vs_target = new_cum_ProductTotal ? (cum_Sales_product_month / new_cum_ProductTotal).toFixed(2) : 0;
+      total_New_Sales_achived_vs_target += roundToTwoDecimals(new_Sales_achived_vs_target);
+
+ //calculation part variables
+  avgDay=roundToTwoDecimals(monthtotalArray[i]/workingDayForMOn)||0;
+  avgDayTotal += roundToTwoDecimals(avgDay);
+
+  currentTargetTillDay =  roundToTwoDecimals(avgDay*completedWorkDay)||0;
+  currTarDayTotal +=roundToTwoDecimals(currentTargetTillDay);
+
+  sales_target_for = roundToTwoDecimals((forTheMonth-cum_salesRepAmount)/balance_For_day)||0;
+  total_sales_target_for +=roundToTwoDecimals(sales_target_for);
+  
+  sales_plus_minus =  roundToTwoDecimals(cum_salesRepAmount - currentTargetTillDay)||0;
+  total_Sales_Plus_Minus += roundToTwoDecimals(sales_plus_minus);
+
+  salesVstarget = roundToTwoDecimals(cum_salesRepAmount/forTheMonth) ||0;
+  totalSalesVstarget += salesVstarget;
+
+      // Construct a new table row with individual cells (TD) for each sales rep
+               td = '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
+                    '<td align ="left" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + salesRepName + '</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal; background-color: rgb(239, 239, 238);">'+forTheMonth+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+avgDay+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+currentTargetTillDay+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+sales_target_for+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;  background-color: rgb(137, 211, 127)">'+salesRepAmount+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;  background-color: rgb(137, 211, 127)">' + cum_salesRepAmount + '</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+sales_plus_minus+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+salesVstarget+'%'+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+cum_amt_total+'</td>';
+           
+               tr += '<tr>' + td + '</tr>';   
+               
+               target_15_0f_sales = (forTheMonth*15)/100;
+               target_15_total += target_15_0f_sales;
+               var target_6_parcent = (total_sales_target_for/100)*6
+               
+               // new product sales report
+               td2 =  '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+serialNumber+'</td>' +
+               '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+salesRepName+'</td>'+
+               '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+target_15_0f_sales+'</td>'+
+               '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+newSales_Product+'</td>'+
+               '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+cum_Sales_product_month+'</td>'+
+               '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+new_Sales_achived_vs_target+'</td>'
+
+               tr2 += '<tr style="width: 10%;height:2%;">'+ td2 + '</tr>';
+               serialNumber++;
+           } 
+          //  log.debug("Generated Sales Rep Table Rows", tr);
+          
+          
+        
+        
+
+}        
+  var xmlTemplateFile='<?xml version="1.0"?>\
+<!DOCTYPE pdf PUBLIC "-//big.faceless.org//report" "report-1.1.dtd">\
+<pdf>\
+<head>\
+</head>\
+<body style="font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 20px; width: 250mm; height: 297mm;">\
+ <!-- First Table -->\
+        <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 15px; ">\
+          <tr border-bottom="1"  style="background-color: white;width: 10%;height:2%;">\
+            <td border-right="1" style=" width: 15px;height:10px; padding: 4px;color:black; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\WBT 4.2</td>\
+             <td border-right="1" colspan="8" style=" width:15px;height:10px;background-color: red; color: white; padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\WHITE BOARD TRACKER</td>\
+             <td colspan="2" style="width: 15px;height:10px;background-color: #4CAF50; color: black;padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal;align: center; vertical-align: middle;">'+monthNames+'</td>\
+          </tr>\
+          <tr border="1" border-top="none" style="border-bottom:none;background-color: #f2f2f2;color:black;width: 10%;height:2%;">\
+            <td border-right="1"  border-top="none" style="  width: 15px;height:10px; padding: 4px;  font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">'+monthNames+'</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">BRANCH NAME</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  background-color:white ; background-color:white ; background-color:white ; font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\Working days for month</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">26</td>\
+            <td border-right="1" border-top="none"  style="  width: 15px;height:10px;  padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Standup meeting working day</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color: #4CAF50;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">1</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Completed working days</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;   background-color: #4CAF50;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">1</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Balance days for month</td>\
+            <td border-top="none"  style="width: 15px;height:10px; padding: 4px;  background-color:white ;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">25</td>\
+          </tr>\
+        </table>\
+<!-- Second Table -->\
+<table style="width: 100%; border-collapse: collapse;">\
+  <!-- Header Row -->\
+  <tr style="background-color: #4CAF50; color: white;">\
+    <td colspan="11" style="align:center;border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Sales</td>\
+  </tr>\
+  <!-- Sub-header Rows -->\
+  <tr style="background-color: #f9f9f9;">\
+    <td rowspan="2" style="border: 1px solid black;background-color: #f2f2f2; padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(255, 238, 192);">SI.No</td>\
+    <td rowspan="2" style="border: 1px solid black; background-color: #f2f2f2;padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(255, 238, 192);">Sales Executive M/s</td>\
+    <td align ="center" colspan="4" style="border: 1px solid black; padding: 4px;color: white; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;background-color: rgb(255, 9, 17)">Target Lacs</td>\
+    <td align ="center"  colspan="3" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal; color: white;  background-color: rgb(108, 102, 218)">Sales Lacs</td>\
+    <td align ="center" colspan="3" style="border: 1px solid black; padding: 4px;  font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal; color: white;  background-color: rgb(108, 102, 218)">Cum % of Sales</td>\
+  </tr>\
+  <tr style="background-color: #f2f2f2;">\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">For the Month</td>\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Avg/Day</td>\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cum Target till Date-(Avg/Day)</td>\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Target for</td>\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales for the Day</td>\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cumulative sales as of</td>\
+    <td style="border: 1px solid black; padding:4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Cumulative Plus/Minus</td>\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales vs Target</td>\
+    <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cus Salesmen Share</td>\
+  </tr>\
+  <!-- Rows with Date Values -->\
+  <!-- items map -->\
+   '+tr+'\
+  <!-- total map -->\
+      <tr>\
+    <td  style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
+      <td align = "center" style="border: 1px solid black; padding:4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+TotalmonthtotalArray+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+avgDayTotal+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+currTarDayTotal+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_sales_target_for+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalAmount+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cum_totalAmount+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'</td>\
+  </tr>\
+</table>\
+ <table  style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;top:1%;">\
+        <tr style="width: 10%;height:2%;">\
+          <td  border="1" border-right="1" colspan="3" style="width: 15px;height:10px;font-weight: bold; background-color: red; color: white;  padding: 8px;align: center;  font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">NEW DEALERS` SALES - TARGET 6% OF SALES</td>\
+        </tr>\
+        <tr >\
+          <td  style="width: 50%;">\
+            <table border="1" style="width: 100%; border-collapse: collapse;margin-top:-2%;">\
+              <tr style="width: 10%;height:2%;">\
+                <td border-bottom="1" colspan="4" style="width: 15px;height:10px;background-color: rgb(108, 102, 218); color: white;  padding: 8px;align: center;font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">NEW DEALERS` SALES REPORT - Lacs for this month</td>\
+              </tr >\
+              <tr style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
+                <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">Target 6% of sales for the day</td>\
+                <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">New Dealers` Sales for the day</td>\
+                <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">Cumulative New Dealer Sales</td>\
+                <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">% sales achieved Vs target</td>\
+              </tr>\
+              <tr style="width: 10%;height:2%;">\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(target_6_parcent)+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+newDealersTotalAmount+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumulativeNewDealerAmount+'</td>\
+                <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">86.7%</td>\
+              </tr>\
+            </table>\
+          </td>\
+          <td style="width: 15px;height:10px;">\</td>\ <!-- Empty column for spacing -->\
+          <td style="width: 50%;">\
+            <table border="1" style="width: 100%; border-collapse: collapse;">\
+              <tr style="background-color: rgb(108, 102, 218); color: white;width: 10%;height:2%;">\
+                <td border-bottom="1" colspan="4" style="width: 15px;height:10px;color: white; font-weight: bold; padding: 8px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\CUM. NEW DEALERS` SALES REPORT - Lacs for this month (till this month)</td>\
+              </tr>\
+              <tr style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
+                <td border-right="1"  style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">Cum.Branch Sales till last month</td>\
+                <td  border-right="1"   style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">New Dealers` Sales Target</td>\
+                <td  border-right="1"   style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">New Dealer Sales</td>\
+                <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">% sales achieved Vs target</td>\
+              </tr>\
+              <tr style="width: 10%;height:2%;">\
+                <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;">0.00</td>\
+                <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;">0.00</td>\
+                <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;">0.00</td>\
+                <td style="width: 15px;height:10px;  padding: 6px;align: center;">#DIV/0!</td>\
+              </tr>\
+            </table>\
+          </td>\
+        </tr>\
+      </table>\
+      <!-- last table -->\
+          <table border="1"  style="width: 60%; margin-top:20px;border-collapse: collapse; ">\
+              <tr style="width: 10%;height:2%;">\
+                <td border-bottom="1" colspan="6" style="width: 15px;height:10px;background-color: rgb(108, 102, 218); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">NEW PRODUCT SALES  REPORT  ₹ Lacs</td>\
+              </tr>\
+             <tr>\
+                <td colspan="6" style="width: 15px;height:10px;font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\
+                </td>\
+              </tr>\
+              <tr border-top="1" style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
+                <td border-right="1"  border-bottom="1"  style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sl No</td>\
+                <td border-right="1"  border-bottom="1"  style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sales Executive M/s</td>\
+                <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Target 15% of sales </td>\
+                <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sales for the day</td>\
+                <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Cumulative sales</td>\
+                <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\% sales achived Vs target</td>\
+              </tr>\
+             '+tr2+'\
+            <tr style="width: 10%;height:2%;">\
+              <td border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;" ></td>\
+               <td border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;" ></td>\
+               <td border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;" ></td>\
+               <td border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;" ></td>\
+               <td border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;" ></td>\
+               <td  style="width: 15px;height:10px;  padding: 6px; align: center;" ></td>\
+            </tr>\
+              <tr border-top="1" style="width: 10%;height:2%;">\
+                <td border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;"></td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">Total</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+roundToTwoDecimals(target_15_total)+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+roundToTwoDecimals(newProductTotal)+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+roundToTwoDecimals(new_cum_ProductTotal)+'</td>\
+                <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+total_New_Sales_achived_vs_target+'</td>\
+              </tr>\
+            </table>\
+</body>\
+</pdf>';
+
+// Create and configure the renderer
+var renderer = render.create();
+renderer.templateContent = xmlTemplateFile;
+// Log renderer object for debugging
+log.debug({
+  title: "Renderer Object",
+  details: renderer,
+});
+
+// Add record to renderer
+renderer.addRecord("record", loadPO);
+// Render PDF
+var invoicePdf = renderer.renderAsPdf();
+
+// Send the PDF as response
+context.response.writeFile({
+  file: invoicePdf,
+  isInline: true,
+});
+
+      
+}catch(error) {
+log.error({
+  title: "Error in Suitelet",
+  details: error.message,
+});
+
+// Send error response to the user
+context.response.write({
+  output: "An error occurred: " + error.message,
+}); 
+}
+}
+return {
+  onRequest: onRequest
+ };
+});
