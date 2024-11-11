@@ -149,38 +149,41 @@ for (var m = 0; m < internalIds.length; m++) {
       id: internalIds[m]
   });
 
- 
-
   // Get the month value and add to monthtotalArray
   var monthValue = parseFloat(src_rec1.getValue({ fieldId: monthField })) || 0;
   monthtotalArray.push(monthValue);
 }
-
 log.debug(' internalIds.length;', internalIds.length)
 
 // Initialize TotalmonthtotalArray to 0
 var TotalmonthtotalArray = 0;
-
 // Calculate the cumulative total of month values using a loop
 for (var i = 0; i < monthtotalArray.length; i++) {
   TotalmonthtotalArray += monthtotalArray[i];
 }
-
 log.debug("TotalmonthtotalArray (Cumulative Total)", TotalmonthtotalArray);
-
 log.debug("monthtotalArray (Individual Month Values)", monthtotalArray);
 log.debug("TotalmonthtotalArray (Cumulative Total)", TotalmonthtotalArray);
+
 var monthValue = 0;
 // Assuming itemSublist is the variable representing your item sublist
 for (var i = 0; i < monthtotalArray.length; i++) {
 monthValue = monthtotalArray[i];
-  
 }
 
 // Check if we have any valid sales reps in salesRepInfo
-if (Object.keys(salesRepInfo).length === 0) {
-  log.debug("No valid sales reps found. Skipping further search.");
-  return;  // Skip further search and processing if no valid sales reps found
+if
+(Object.keys(salesRepInfo).length === 0) {       
+        log.debug("No valid sales reps found. Skipping further search.");            
+// HTML content to display when no sales rep is found
+      var htmlContent ='<html><head><title>No Sales Rep Found</title></head><body>';          
+      htmlContent +='<h1>No Sales Rep Found for the given period.</h1>';   
+      htmlContent +='<p>Please check the details and try again.</p>';     
+      htmlContent +='</body></html>';            
+// Write the HTML response to the page
+context.response.write(htmlContent);
+return ;
+// Stop further search and processing if no valid sales reps found
 }
 
 // Second search: Get sales amounts by filtering with valid sales rep IDs
@@ -210,10 +213,8 @@ invoiceSearch.run().each(function(result) {
       salesRepInfo[salesRepId].amount = totalAmountForRep;
       totalAmount += totalAmountForRep;
   }
-
   return true;
 });
-
 log.debug("Sales Rep Information (with Amounts)", salesRepInfo);
 log.debug("Total Amount", totalAmount);
 
@@ -235,11 +236,9 @@ var invoiceSearch2 = search.create({
 });
 
 var cum_totalAmount = 0;
-
 invoiceSearch2.run().each(function(result) {
   var cum_salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
   var cum_totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" });
-
   cum_totalAmountForRep = cum_totalAmountForRep ? parseFloat(cum_totalAmountForRep) : 0;
 
   if (salesRepInfo[cum_salesRepId]) {
@@ -257,6 +256,87 @@ invoiceSearch2.run().each(function(result) {
 log.debug("Sales Rep Information (with Cumulative Sales)", salesRepInfo);
 log.debug("Total Sales Amount", cum_totalAmount);
 
+ // sales for the day for new dealers
+ var newDealersTotalAmount = 0;
+ var processedInvoiceIds = [];       // Array to store unique invoice IDs
+ var uniqueInvoiceAmounts = [];       // Array to store each unique invoice amount
+ 
+ var invoiceSearchToday = search.create({
+     type: search.Type.INVOICE,
+     filters: [
+         ["type", "anyof", "CustInvc"],
+         "AND",
+         ["salesrep", "anyof", Object.keys(salesRepInfo)],
+         "AND",
+         ["trandate", "on", today],
+         "AND",
+         ["customer.custentity_customer_date_creations_", "is", "T"]
+     ],
+     columns: [
+         search.createColumn({ name: "amount" }),
+         search.createColumn({ name: "internalid" })
+     ]
+ });
+ 
+ invoiceSearchToday.run().each(function (invoiceResult) {
+     var invoiceID = invoiceResult.getValue({ name: "internalid" });
+     var amountToday = parseFloat(invoiceResult.getValue({ name: "amount" })) || 0;
+ 
+     // Check if invoiceID is already processed
+     if (processedInvoiceIds.indexOf(invoiceID) === -1) {
+         processedInvoiceIds.push(invoiceID);    // Add ID to processed invoices array
+         newDealersTotalAmount += amountToday;        // Update total amount
+         uniqueInvoiceAmounts.push(amountToday); // Add amount to unique amounts array
+        log.debug('Unique Invoice Amount Today:', amountToday);
+     }
+     return true;
+ });
+ 
+log.debug('Today Total Amount:', newDealersTotalAmount);
+log.debug('Unique Invoice Amounts Array:', uniqueInvoiceAmounts); // Array of unique amounts
+ 
+ // for a month new dealer
+ var cumulativeNewDealerAmount = 0;
+ var invoiceList = [];
+ 
+ var invoiceSearch = search.create({
+     type: search.Type.INVOICE,
+     filters: [
+         ["type", "anyof", "CustInvc"],
+         "AND",
+         ["salesrep", "anyof", Object.keys(salesRepInfo)],
+         "AND",
+         ["trandate", "within", formattedStartDate, formattedEndDate],
+         "AND",
+         ["customer.custentity_customer_date_creations_", "is", "T"]
+     ],
+     columns: [
+         search.createColumn({ name: "internalid" }),
+         search.createColumn({ name: "amount" }),
+         search.createColumn({ name: "postingperiod" })
+     ]
+ });
+ 
+ invoiceSearch.run().each(function (invoiceResult) {
+     var invoiceID = invoiceResult.getValue("internalid");
+     var amount = parseFloat(invoiceResult.getValue("amount")) || 0;
+     var postingPeriod = invoiceResult.getValue("postingperiod");
+     
+     cumulativeNewDealerAmount += amount;
+     invoiceList.push({
+         id: invoiceID,
+         amount: amount,
+         postingPeriod: postingPeriod
+     });
+ 
+    log.debug('Invoice ID:', invoiceID);
+    log.debug('Invoice Amount:', amount);
+    log.debug('Posting Period:', postingPeriod);
+     return true;
+ });
+log.debug('Cumulative Amount:', cumulativeNewDealerAmount);
+log.debug('Invoice List:', invoiceList);
+ 
 // Prepare table data for output
 var cum_salesRepNames = [];
 var cum_salesRepAmounts = [];
@@ -283,7 +363,6 @@ for (var salesRepId in salesRepInfo) {
 var workingDayForMOn = 26;
 var completedWorkDay = 1;
 var balance_For_day =25;
-
 //calculation part variables
 var avgDay =0;
 var avgDayTotal=0;
@@ -299,7 +378,6 @@ var totalSalesVstarget = 0;
 function roundToTwoDecimals(value) {
 return Math.round(value * 100) / 100;
 }
-
 
 var cum_amt_total =0;
 var total_cum_amt_percentage = 0; // New variable to accumulate the total percentage
@@ -330,7 +408,6 @@ for (var i = 0; i < salesRepNames.length; i++) {
   salesVstarget = roundToTwoDecimals(cum_salesRepAmount/forTheMonth) ||0;
   totalSalesVstarget += salesVstarget;
 
-
       // Construct a new table row with individual cells (TD) for each sales rep
                td = '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
                     '<td align ="left" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + salesRepName + '</td>' +
@@ -344,18 +421,18 @@ for (var i = 0; i < salesRepNames.length; i++) {
                     '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+salesVstarget+'%'+'</td>' +
                     '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+cum_amt_total+'</td>';
            
-               tr += '<tr>' + td + '</tr>';
-           
+               tr += '<tr>' + td + '</tr>';          
                serialNumber++;
-           }
-         
+           } 
           //  log.debug("Generated Sales Rep Table Rows", tr);
-
           var target_6_parcent = (total_sales_target_for/100)*6
 
-          }
-
+        // new product sales report
+        for (var i = 0; i < salesRepNames.length; i++) {
           
+        }
+
+}        
   var xmlTemplateFile='<?xml version="1.0"?>\
 <!DOCTYPE pdf PUBLIC "-//big.faceless.org//report" "report-1.1.dtd">\
 <pdf>\
@@ -374,11 +451,11 @@ for (var i = 0; i < salesRepNames.length; i++) {
             <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">BRANCH NAME</td>\
             <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  background-color:white ; background-color:white ; background-color:white ; font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\Working days for month</td>\
             <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">26</td>\
-            <td border-right="1" border-top="none"  style="  width: 15px;height:10px;  padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\Standup meeting working day</td>\
+            <td border-right="1" border-top="none"  style="  width: 15px;height:10px;  padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Standup meeting working day</td>\
             <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color: #4CAF50;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">1</td>\
-            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\Completed working days</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Completed working days</td>\
             <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;   background-color: #4CAF50;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">1</td>\
-            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\Balance days for month</td>\
+            <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Balance days for month</td>\
             <td border-top="none"  style="width: 15px;height:10px; padding: 4px;  background-color:white ;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">25</td>\
           </tr>\
         </table>\
@@ -443,8 +520,8 @@ for (var i = 0; i < salesRepNames.length; i++) {
               </tr>\
               <tr style="width: 10%;height:2%;">\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(target_6_parcent)+'</td>\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">0.4</td>\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">0.4</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+newDealersTotalAmount+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumulativeNewDealerAmount+'</td>\
                 <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">86.7%</td>\
               </tr>\
             </table>\
