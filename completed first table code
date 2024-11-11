@@ -351,6 +351,8 @@ for (var i = 0; i < salesRepNames.length; i++) {
          
           //  log.debug("Generated Sales Rep Table Rows", tr);
 
+          var target_6_parcent = (total_sales_target_for/100)*6
+
           }
 
           
@@ -440,7 +442,7 @@ for (var i = 0; i < salesRepNames.length; i++) {
                 <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">% sales achieved Vs target</td>\
               </tr>\
               <tr style="width: 10%;height:2%;">\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">0.46</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(target_6_parcent)+'</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">0.4</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">0.4</td>\
                 <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">86.7%</td>\
