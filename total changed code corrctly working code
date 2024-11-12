@@ -372,6 +372,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                      var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
                      var totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" }) || 0;
       
+                     log.debug('result', result)
                      // Store the amount for the corresponding sales rep ID
                      cum_newProdect[salesRepId] = totalAmountForRep;
 
@@ -402,6 +403,8 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 var targetFor6Percent =0;
                 var newDealersTotalForDay =0;
                 var cumNewDealerTotal=0;
+                var percentSalesVsTarget =0;
+                var perDealerAchievedVsTarget =0;
                 //3rd table variable
                 var target_15_0f_sales = 0;
                 var target_15_total= 0;
@@ -450,8 +453,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     cum_amt_total = cum_AmountForRep ? roundToTwoDecimals(cum_AmountForRep / cumMonTotalAmount) : 0;
                     total_cum_amt_percentage += roundToTwoDecimals(cum_amt_total);
 
+                  
                      //calculation part variables
-                      avgDay=roundToTwoDecimals(monthtotalArray[i]/workingDayForMOn)||0;
+                      avgDay=roundToTwoDecimals(forTheMonth/workingDayForMOn)||0;
                       avgDayTotal += roundToTwoDecimals(avgDay);
 
                       currentTargetTillDay =  roundToTwoDecimals(avgDay*completedWorkDay)||0;
@@ -460,12 +464,24 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                       sales_target_for = roundToTwoDecimals((forTheMonth-cum_AmountForRep)/balance_For_day)||0;
                       total_sales_target_for +=roundToTwoDecimals(sales_target_for);
                       
-                      sales_plus_minus =  roundToTwoDecimals(cum_AmountForRep - currentTargetTillDay)||0;
+                      sales_plus_minus =  roundToTwoDecimals(cum_AmountForRep - currentTargetTillDay);
                       total_Sales_Plus_Minus += roundToTwoDecimals(sales_plus_minus);
                     
                       salesVstarget = roundToTwoDecimals(cum_AmountForRep/forTheMonth) ||0;
                       totalSalesVstarget += salesVstarget;
 
+                    
+
+                          //2table e24 calculation
+                          percentSalesVsTarget = avgDayTotal*completedWorkDay*6;
+                          //2nd table sales vs target
+                          // Avoid division by zero
+                          if (percentSalesVsTarget !== 0) {
+                            perDealerAchievedVsTarget = cumNewDealerTotal / percentSalesVsTarget;
+                          } else {
+                            perDealerAchievedVsTarget = 0; // Set default if division is not possible
+                          }
+      
 
                       td = '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
                       '<td align ="left" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + salesRepName[i] + '</td>' +
@@ -609,7 +625,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(targetFor6Percent)+'</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(newDealersTotalForDay)+'</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(cumNewDealerTotal)+'</td>\
-                <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">86.7%</td>\
+                <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(perDealerAchievedVsTarget)+'%'+'</td>\
               </tr>\
             </table>\
           </td>\
