@@ -494,7 +494,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
 
            if (cum_newProductMonth !== 0) { 
-            perSalesAchivedvsTarget = target_15_0f_sales / cum_newProductMonth;
+            perSalesAchivedvsTarget = cum_newProductMonth/target_15_0f_sales ;
         } else {
             perSalesAchivedvsTarget = 0; // Default to 0 if division is not possible
         }
@@ -504,10 +504,10 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
              // new product sales report
              td2 =  '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+serialNumber+'</td>' +
              '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+salesRepName[i]+'</td>'+
-             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+target_15_0f_sales+'</td>'+
-             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+newProductSalesForDay+'</td>'+
-             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+cum_newProductMonth+'</td>'+
-             '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+perSalesAchivedvsTarget+'</td>'
+             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(target_15_0f_sales)+'</td>'+
+             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(newProductSalesForDay)+'</td>'+
+             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(cum_newProductMonth)+'</td>'+
+             '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(perSalesAchivedvsTarget)+'</td>'
 
              tr2 += '<tr style="width: 10%;height:2%;">'+ td2 + '</tr>';
            serialNumber++;
@@ -585,7 +585,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
       <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+todayCalAmount+'</td>\
       <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cumMonTotalAmount+'</td>\
       <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
-      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+totalSalesVstarget+'%'+'</td>\
+      <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
       <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'%'+'</td>\
   </tr>\
   </table>\
@@ -606,9 +606,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">% sales achieved Vs target</td>\
               </tr>\
               <tr style="width: 10%;height:2%;">\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+targetFor6Percent+'</td>\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+newDealersTotalForDay+'</td>\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumNewDealerTotal+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(targetFor6Percent)+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(newDealersTotalForDay)+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(cumNewDealerTotal)+'</td>\
                 <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">86.7%</td>\
               </tr>\
             </table>\
@@ -656,10 +656,10 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
               <tr style="width: 10%;height:2%;">\
                 <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;"></td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">Total</td>\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+target_15_total+'</td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+(target_15_total).toFixed(2)+'</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+newProSalesForDayTotal+'</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+cumNewProductTotal+'</td>\
-                <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+totalPerSales+'</td>\
+                <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+totalPerSales.toFixed(2)+'</td>\
               </tr>\
             </table>\
 </body>\
