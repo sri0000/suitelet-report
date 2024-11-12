@@ -190,6 +190,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 log.debug("Sales Rep today amount", today_SalesRep_Amounts);
 
 
+                //cum sales for the sales rep
                 var salesRepAmounts = {};// Object to map sales rep ID to amount
 
                 var invoiceSearchObj = search.create({
@@ -229,17 +230,17 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                  // sales for the day for new dealers
                  var newDelDateCreationsalesAmounts = {};
                  var invoiceSearchObj = search.create({
-                                     type: "invoice",
+                     type: "invoice",
                      settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
                      filters: [
                          ["type", "anyof", "CustInvc"],
-                "AND",
-                ["salesrep", "anyof", salesRepIds],
-                "AND",
-                ["trandate", "on", today],
-                "AND",
-                ["customer.custentity_customer_date_creations_", "is", "T"]
-               ],
+                         "AND",
+                         ["salesrep", "anyof", salesRepIds],
+                         "AND",
+                         ["trandate", "on", today],
+                         "AND",
+                         ["customer.custentity_customer_date_creations_", "is", "T"]
+                     ],
                      columns: [
                          search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
                          search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
@@ -265,7 +266,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                  log.debug("Sales Rep Amounts", newDelDateCreationsalesAmounts); // Logs amounts for each sales rep ID
 
                  //new dealers date of creation monthly sales rep amount 
-                   // sales for the day for new dealers
+                   // sales for the month for new dealers
                    var cumNewDealersAmount = {};
                    var invoiceSearchObj = search.create({
                                        type: "invoice",
@@ -302,6 +303,46 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                    });
    
                    log.debug("Sales Rep Amounts", cumNewDealersAmount); // Logs amounts for each sales rep ID
+
+                   //search for the new product find the sales for the day
+                      // sales for the day for new dealers
+                 var newProdect = {};
+                 var invoiceSearchObj = search.create({
+                     type: "invoice",
+                     settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
+                     filters: [
+                         ["type", "anyof", "CustInvc"],
+                         "AND",
+                         ["salesrep", "anyof", salesRepIds],
+                        //  "AND",
+                        //  ["trandate", "on", today],
+                         "AND",
+                         ["item.custitem_impal_new_product", "is", "T"]
+                        ],
+                     columns: [
+                         search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                         search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
+                     ]
+                 });
+ 
+                 var searchResultCount = invoiceSearchObj.runPaged().count;
+                 log.debug("invoiceSearchObj result count", searchResultCount);
+ 
+                 // Run the search and populate newProdect
+                 invoiceSearchObj.run().each(function(result) {
+                var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                var totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" }) || 0;
+   
+ 
+                // Store the amount for the corresponding sales rep ID
+                newProdect[salesRepId] = totalAmountForRep;
+ 
+
+                     return true;
+                 });
+ 
+                 log.debug("Sales Rep Amounts", newProdect); // Logs amounts for each sales rep ID
+
   
 
                 function roundToTwoDecimals(value) {
@@ -329,6 +370,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 //3rd table variable
                 var target_15_0f_sales = 0;
                 var target_15_total= 0;
+                var newProSalesForDayTotal = 0;
 
                 var tr ='';
                 var td ='';
@@ -366,7 +408,6 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
                      var cumNewDealers = parseFloat(cumNewDealersAmount[salesRepId]) || 0;
                      cumNewDealerTotal += cumNewDealers; 
-
 
                     cum_amt_total = cum_AmountForRep ? roundToTwoDecimals(cum_AmountForRep / cumMonTotalAmount) : 0;
                     total_cum_amt_percentage += roundToTwoDecimals(cum_amt_total);
@@ -407,11 +448,13 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
            target_15_0f_sales = (forTheMonth*15)/100;
            target_15_total += target_15_0f_sales;
 
+           var newProductSalesForDay = parseFloat(newProdect[salesRepId]) || 0;
+           newProSalesForDayTotal += newProductSalesForDay;
              // new product sales report
              td2 =  '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+serialNumber+'</td>' +
              '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+salesRepName[i]+'</td>'+
              '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+target_15_0f_sales+'</td>'+
-             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;"></td>'+
+             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+newProductSalesForDay+'</td>'+
              '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;"></td>'+
              '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;"></td>'
 
@@ -563,7 +606,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;"></td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">Total</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+target_15_total+'</td>\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;"></td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+newProSalesForDayTotal+'</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;"></td>\
                 <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;"></td>\
               </tr>\
