@@ -314,8 +314,8 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                          ["type", "anyof", "CustInvc"],
                          "AND",
                          ["salesrep", "anyof", salesRepIds],
-                        //  "AND",
-                        //  ["trandate", "on", today],
+                         "AND",
+                         ["trandate", "on", today],
                          "AND",
                          ["item.custitem_impal_new_product", "is", "T"]
                         ],
@@ -343,8 +343,43 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
  
                  log.debug("Sales Rep Amounts", newProdect); // Logs amounts for each sales rep ID
 
-  
+                    //search for the new product find the sales for the day
+                      // sales for the day for new dealers
+                      var cum_newProdect = {};
+                      var invoiceSearchObj = search.create({
+                          type: "invoice",
+                          settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
+                          filters: [
+                              ["type", "anyof", "CustInvc"],
+                              "AND",
+                              ["salesrep", "anyof", salesRepIds],
+                              "AND",
+                              ["trandate", "within", formattedStartDate, formattedEndDate],
+                              "AND",
+                              ["item.custitem_impal_new_product", "is", "T"]
+                             ],
+                          columns: [
+                              search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                              search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
+                          ]
+                      });
+      
+                      var searchResultCount = invoiceSearchObj.runPaged().count;
+                      log.debug("invoiceSearchObj result count", searchResultCount);
+      
+                      // Run the search and populate cum_newProdect
+                      invoiceSearchObj.run().each(function(result) {
+                     var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                     var totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" }) || 0;
+      
+                     // Store the amount for the corresponding sales rep ID
+                     cum_newProdect[salesRepId] = totalAmountForRep;
 
+                          return true;
+                      });
+      
+                      log.debug("Sales Rep Amounts", cum_newProdect); // Logs amounts for each sales rep ID
+     
                 function roundToTwoDecimals(value) {
                     return Math.round(value * 100) / 100;
                     }
@@ -371,6 +406,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 var target_15_0f_sales = 0;
                 var target_15_total= 0;
                 var newProSalesForDayTotal = 0;
+                var cumNewProductTotal = 0;
+                var totalPerSales =0;
+                var perSalesAchivedvsTarget = 0; // Initialize to avoid undefined values
 
                 var tr ='';
                 var td ='';
@@ -450,13 +488,26 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
            var newProductSalesForDay = parseFloat(newProdect[salesRepId]) || 0;
            newProSalesForDayTotal += newProductSalesForDay;
+
+           var cum_newProductMonth = parseFloat(cum_newProdect[salesRepId]) || 0;
+           cumNewProductTotal += cum_newProductMonth;
+
+
+           if (cum_newProductMonth !== 0) { 
+            perSalesAchivedvsTarget = target_15_0f_sales / cum_newProductMonth;
+        } else {
+            perSalesAchivedvsTarget = 0; // Default to 0 if division is not possible
+        }
+        
+        totalPerSales += perSalesAchivedvsTarget; // Add to total
+
              // new product sales report
              td2 =  '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+serialNumber+'</td>' +
              '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+salesRepName[i]+'</td>'+
              '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+target_15_0f_sales+'</td>'+
              '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+newProductSalesForDay+'</td>'+
-             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;"></td>'+
-             '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;"></td>'
+             '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+cum_newProductMonth+'</td>'+
+             '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+perSalesAchivedvsTarget+'</td>'
 
              tr2 += '<tr style="width: 10%;height:2%;">'+ td2 + '</tr>';
            serialNumber++;
@@ -607,8 +658,8 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">Total</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+target_15_total+'</td>\
                 <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+newProSalesForDayTotal+'</td>\
-                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;"></td>\
-                <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;"></td>\
+                <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+cumNewProductTotal+'</td>\
+                <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+totalPerSales+'</td>\
               </tr>\
             </table>\
 </body>\
