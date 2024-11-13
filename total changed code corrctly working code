@@ -70,10 +70,58 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 log.debug('Trimmed Period:', trimmedPeriod);
                 log.debug('Month Name:', monthName);
                 log.debug('Year:', year);
+
+                // this is find the fiscal period April to Selected month before month
+                var fiscalStartMonth = 3; // April (fiscal year starts in April)
+            var reverseMonthMap = {};
+            for (var month in monthMap) {
+                if (monthMap.hasOwnProperty(month)) {
+                    reverseMonthMap[monthMap[month]] = month;
+                }
+            }
+            var selectedMonthIndex = monthMap[monthName];
+            // Determine the fiscal year based on the selected month (relative to fiscal start)
+            var fiscalYear = (selectedMonthIndex <= fiscalStartMonth) ? year - 1 : year; // Adjust for fiscal year
+            // If the user selects February, the fiscal year remains the same
+            // Calculate the previous month
+            var prevMonthIndex;
+            if (selectedMonthIndex === 0) { // If selected month is January
+                prevMonthIndex = 11; // Set previous month to December
+                fiscalYear = year - 1; // Adjust fiscal year
+                // log.debug('the year - 1 is run')
+            } else if (selectedMonthIndex === 1) { // If selected month is February
+                prevMonthIndex = 0; // Previous month is January
+                // log.debug('the  prev month workis run') // No need to adjust fiscal year for February, it stays the same
+            } else {
+                prevMonthIndex = selectedMonthIndex - 1;
+                // log.debug('month - 1 ',prevMonthIndex) // Regular month: just subtract 1 for previous month
+            }   
+            // Get the previous month name
+            var prevMonthName = reverseMonthMap[prevMonthIndex];
+            log.debug('Previous month name:', prevMonthName);
+            log.debug('Fiscal year:', fiscalYear);
+            // Calculate the start and end dates based on fiscal period
+            var endyear = (selectedMonthIndex === 0)   ? year - 1 : year;          
+            var fiscalStartDate = new Date(fiscalYear, fiscalStartMonth, 1);
+            // log.debug( 'correct start date', fiscalStartDate)
+            var fiscalEndDate = new Date(endyear, prevMonthIndex + 1, 0); // Last day of selected month - 1
+            // log.debug('corrected end date format', fiscalEndDate)
+            // Format the start and end dates
+            var formattedFiscalStartDate = format.format({
+                value: fiscalStartDate,
+                type: format.Type.DATE
+            });
+            var formattedFicalEndDate = format.format({
+                value: fiscalEndDate,
+                type: format.Type.DATE
+            });
+            //   Log formatted dates for debugging
+            log.debug('Start Date of the Fiscal Month April:', formattedFiscalStartDate);
+            log.debug('End Date Month of the Selected Month Before Month:', formattedFicalEndDate);
   
                 // Map month abbreviations to their corresponding fields
                 var monthFieldMap = {
-                    'Jan': 'custrecord_wbt_salesman_field_jan',
+                    'Jan': 'custrec ord_wbt_salesman_field_jan',
                     'Feb': 'custrecord_wbt_salesman_field_feb',
                     'Mar': 'custrecord_wbt_salesman_field_march',
                     'Apr': 'custrecord_wbt_salesman_field_april',
@@ -304,6 +352,44 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
    
                    log.debug("Sales Rep Amounts", cumNewDealersAmount); // Logs amounts for each sales rep ID
 
+                     // sales for the fical period start and end month for new dealers
+                     var cumFiscalNewDealersAmount = {};
+                     var invoiceSearchObj = search.create({
+                                         type: "invoice",
+                         settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
+                         filters: [
+                             ["type", "anyof", "CustInvc"],
+                             "AND",
+                             ["salesrep", "anyof", salesRepIds],
+                             "AND",
+                             ["trandate", "within", formattedFiscalStartDate, formattedFicalEndDate],
+                             "AND",
+                             ["customer.custentity_customer_date_creations_", "is", "T"]
+                             ],
+                         columns: [
+                             search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                             search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
+                         ]
+                     });
+     
+                     var searchResultCount = invoiceSearchObj.runPaged().count;
+                     log.debug("invoiceSearchObj result count", searchResultCount);
+     
+                     // Run the search and populate cumFiscalNewDealersAmount
+                     invoiceSearchObj.run().each(function(result) {
+                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                    var totalAmountForRep = result.getValue({ name: "amount", summary: "SUM" }) || 0;
+       
+     
+                    // Store the amount for the corresponding sales rep ID
+                    cumFiscalNewDealersAmount[salesRepId] = totalAmountForRep;
+     
+    
+                         return true;
+                     });
+     
+                     log.debug("fiscal month Sales Rep Amounts", cumFiscalNewDealersAmount); // Logs amounts for each sales rep ID
+  
                    //search for the new product find the sales for the day
                       // sales for the day for new dealers
                  var newProdect = {};
@@ -405,6 +491,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 var cumNewDealerTotal=0;
                 var percentSalesVsTarget =0;
                 var perDealerAchievedVsTarget =0;
+                var fiscalCumSalesAmount =0;
+                var fiscalCumTotal =0;
+                var newDealersSalesTarget =0;
                 //3rd table variable
                 var target_15_0f_sales = 0;
                 var target_15_total= 0;
@@ -444,6 +533,13 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
 
                     //second table sales
+
+                     fiscalCumSalesAmount= parseFloat(cumFiscalNewDealersAmount[salesRepId]) || 0;
+                     fiscalCumTotal +=fiscalCumSalesAmount;
+                     newDealersSalesTarget = fiscalCumTotal*6;
+                     log.debug('fiscalCumTotal Amount', fiscalCumTotal);
+                     log.debug('fiscal * 6%',newDealersSalesTarget);
+
                      var newDealersFotDay = parseFloat(newDelDateCreationsalesAmounts[salesRepId]) || 0;
                      newDealersTotalForDay += newDealersFotDay; 
 
@@ -499,7 +595,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
            
           
            
-           target_15_0f_sales = (forTheMonth*15)/100;
+           target_15_0f_sales = forTheMonth*0.15;
            target_15_total += target_15_0f_sales;
 
            var newProductSalesForDay = parseFloat(newProdect[salesRepId]) || 0;
@@ -642,10 +738,10 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">% sales achieved Vs target</td>\
               </tr>\
               <tr style="width: 10%;height:2%;">\
-                <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;">0.00</td>\
-                <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;">0.00</td>\
-                <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;">0.00</td>\
-                <td style="width: 15px;height:10px;  padding: 6px;align: center;">#DIV/0!</td>\
+                <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">'+fiscalCumTotal+'</td>\
+                <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">'+newDealersSalesTarget+'</td>\
+                <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">0.00</td>\
+                <td style="width: 15px; height:10px; border-top: 1px solid black; padding: 6px;align: center;">#DIV/0!</td>\
               </tr>\
             </table>\
           </td>\
