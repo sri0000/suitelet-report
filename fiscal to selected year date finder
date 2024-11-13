@@ -74,21 +74,25 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
             // Calculate the start and end dates based on fiscal period
             var endyear = (selectedMonthIndex === 0)   ? year - 1 : year;
 
-            var startDate = new Date(fiscalYear, fiscalStartMonth, 1);
-            log.debug( 'correct start date', startDate)
-            var endDate = new Date(endyear, prevMonthIndex + 1, 0); // Last day of selected month - 1
-            log.debug('corrected end date format', endDate)
+            
+            var fiscalStartDate = new Date(fiscalYear, fiscalStartMonth, 1);
+            log.debug( 'correct start date', fiscalStartDate)
+            var fiscalEndDate = new Date(endyear, prevMonthIndex + 1, 0); // Last day of selected month - 1
+            log.debug('corrected end date format', fiscalEndDate)
 
             // Format the start and end dates
-            var formattedStartDate = format.format({
-                value: fiscalYear,
+            var formattedFiscalStartDate = format.format({
+                value: fiscalStartDate,
                 type: format.Type.DATE
             });
-            var formattedEndDate = format.format({
-                value: prevMonthIndex,
+            var formattedFicalEndDate = format.format({
+                value: fiscalEndDate,
                 type: format.Type.DATE
             });
 
+            //   Log formatted dates for debugging
+            log.debug('Start Date:', formattedFiscalStartDate);
+            log.debug('End Date:', formattedFicalEndDate);
             // Map month abbreviations to their corresponding fields
             var monthFieldMap = {
                 'Jan': 'custrecord_wbt_salesman_field_jan',
@@ -108,9 +112,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
             var monthField = monthFieldMap[prevMonthName];
             // log.debug('Month Field:', monthField);
 
-            // Log formatted dates for debugging
-            // log.debug('Start Date:', formattedStartDate);
-            // log.debug('End Date:', formattedEndDate);
+          
         }
     }
 
