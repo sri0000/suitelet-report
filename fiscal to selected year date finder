@@ -1,0 +1,120 @@
+/**
+ * @NApiVersion 2.x
+ * @NScriptType Suitelet
+ */
+define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], function (record, render, search, runtime, file, format) {
+    function onRequest(context) {
+        var rec_id = context.request.parameters.recordid;
+        // log.debug('rec_id', rec_id);
+        
+        if (!rec_id) {
+            throw new Error("Record ID is missing from request parameters.");
+        }
+
+        // Load the custom record using the rec_id
+        var loadPO = record.load({
+            type: 'customrecord_impal_wbt_sm_brch_rp',
+            id: rec_id
+        });
+
+        var selectedBranch = loadPO.getValue({ fieldId: 'custrecord_impal_brch' });
+        // log.debug("branch", selectedBranch);
+
+        var selectedPeriod = loadPO.getText({ fieldId: 'custrecord_impal_acc_pr' });
+        // log.debug("accountpr", selectedPeriod);
+
+        if (selectedPeriod) {
+            // log.debug('if entered');
+            var periodParts = selectedPeriod.trim().split(' ');
+            var monthName = periodParts[6];
+            var year = parseInt(periodParts[7]);
+            log.debug('monthName', monthName);
+            // log.debug('year', year);
+
+            var monthMap = {
+                'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3,
+                'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7,
+                'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+            };
+
+            var fiscalStartMonth = 3; // April (fiscal year starts in April)
+            var reverseMonthMap = {};
+            for (var month in monthMap) {
+                if (monthMap.hasOwnProperty(month)) {
+                    reverseMonthMap[monthMap[month]] = month;
+                }
+            }
+            
+            var selectedMonthIndex = monthMap[monthName];
+            
+            // Determine the fiscal year based on the selected month (relative to fiscal start)
+            var fiscalYear = (selectedMonthIndex <= fiscalStartMonth) ? year - 1 : year; // Adjust for fiscal year
+            
+            // If the user selects February, the fiscal year remains the same
+            // Calculate the previous month
+            var prevMonthIndex;
+            if (selectedMonthIndex === 0) { // If selected month is January
+                prevMonthIndex = 11; // Set previous month to December
+                fiscalYear = year - 1; // Adjust fiscal year
+                log.debug('the year - 1 is run')
+            } else if (selectedMonthIndex === 1) { // If selected month is February
+                prevMonthIndex = 0; // Previous month is January
+               
+                log.debug('the  prev month workis run') // No need to adjust fiscal year for February, it stays the same
+            } else {
+                prevMonthIndex = selectedMonthIndex - 1;
+                log.debug('month - 1 ',prevMonthIndex) // Regular month: just subtract 1 for previous month
+            }
+            
+            // Get the previous month name
+            var prevMonthName = reverseMonthMap[prevMonthIndex];
+            log.debug('Previous month name:', prevMonthName);
+            log.debug('Fiscal year:', fiscalYear);
+
+            // Calculate the start and end dates based on fiscal period
+            var endyear = (selectedMonthIndex === 0)   ? year - 1 : year;
+
+            var startDate = new Date(fiscalYear, fiscalStartMonth, 1);
+            log.debug( 'correct start date', startDate)
+            var endDate = new Date(endyear, prevMonthIndex + 1, 0); // Last day of selected month - 1
+            log.debug('corrected end date format', endDate)
+
+            // Format the start and end dates
+            var formattedStartDate = format.format({
+                value: fiscalYear,
+                type: format.Type.DATE
+            });
+            var formattedEndDate = format.format({
+                value: prevMonthIndex,
+                type: format.Type.DATE
+            });
+
+            // Map month abbreviations to their corresponding fields
+            var monthFieldMap = {
+                'Jan': 'custrecord_wbt_salesman_field_jan',
+                'Feb': 'custrecord_wbt_salesman_field_feb',
+                'Mar': 'custrecord_wbt_salesman_field_march',
+                'Apr': 'custrecord_wbt_salesman_field_april',
+                'May': 'custrecord_wbt_salesman_field_may',
+                'Jun': 'custrecord_wbt_salesman_field_june',
+                'Jul': 'custrecord_wbt_salesman_field_july',
+                'Aug': 'custrecord_wbt_salesman_field_august',
+                'Sep': 'custrecord_wbt_salesman_field_september',
+                'Oct': 'custrecord_wbt_salesman_field_october',
+                'Nov': 'custrecord_wbt_salesman_field_november',
+                'Dec': 'custrecord_wbt_salesman_field_december'
+            };
+
+            var monthField = monthFieldMap[prevMonthName];
+            // log.debug('Month Field:', monthField);
+
+            // Log formatted dates for debugging
+            // log.debug('Start Date:', formattedStartDate);
+            // log.debug('End Date:', formattedEndDate);
+        }
+    }
+
+    return {
+        onRequest: onRequest
+    };
+});
