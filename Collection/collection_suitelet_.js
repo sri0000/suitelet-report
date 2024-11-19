@@ -71,54 +71,6 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 log.debug('Month Name:', monthName);
                 log.debug('Year:', year);
 
-                // this is find the fiscal period April to Selected month before month
-                var fiscalStartMonth = 3; // April (fiscal year starts in April)
-            var reverseMonthMap = {};
-            for (var month in monthMap) {
-                if (monthMap.hasOwnProperty(month)) {
-                    reverseMonthMap[monthMap[month]] = month;
-                }
-            }
-            var selectedMonthIndex = monthMap[monthName];
-            // Determine the fiscal year based on the selected month (relative to fiscal start)
-            var fiscalYear = (selectedMonthIndex <= fiscalStartMonth) ? year - 1 : year; // Adjust for fiscal year
-            // If the user selects February, the fiscal year remains the same
-            // Calculate the previous month
-            var prevMonthIndex;
-            if (selectedMonthIndex === 0) { // If selected month is January
-                prevMonthIndex = 11; // Set previous month to December
-                fiscalYear = year - 1; // Adjust fiscal year
-                // log.debug('the year - 1 is run')
-            } else if (selectedMonthIndex === 1) { // If selected month is February
-                prevMonthIndex = 0; // Previous month is January
-                // log.debug('the  prev month workis run') // No need to adjust fiscal year for February, it stays the same
-            } else {
-                prevMonthIndex = selectedMonthIndex - 1;
-                // log.debug('month - 1 ',prevMonthIndex) // Regular month: just subtract 1 for previous month
-            }   
-            // Get the previous month name
-            var prevMonthName = reverseMonthMap[prevMonthIndex];
-            log.debug('Previous month name:', prevMonthName);
-            log.debug('Fiscal year:', fiscalYear);
-            // Calculate the start and end dates based on fiscal period
-            var endyear = (selectedMonthIndex === 0)   ? year - 1 : year;          
-            var fiscalStartDate = new Date(fiscalYear, fiscalStartMonth, 1);
-            // log.debug( 'correct start date', fiscalStartDate)
-            var fiscalEndDate = new Date(endyear, prevMonthIndex + 1, 0); // Last day of selected month - 1
-            // log.debug('corrected end date format', fiscalEndDate)
-            // Format the start and end dates
-            var formattedFiscalStartDate = format.format({
-                value: fiscalStartDate,
-                type: format.Type.DATE
-            });
-            var formattedFicalEndDate = format.format({
-                value: fiscalEndDate,
-                type: format.Type.DATE
-            });
-            //   Log formatted dates for debugging
-            log.debug('Start Date of the Fiscal Month April:', formattedFiscalStartDate);
-            log.debug('End Date Month of the Selected Month Before Month:', formattedFicalEndDate);
-  
                 // Map month abbreviations to their corresponding fields
                 var monthFieldMap = {
                     'Jan': 'custrec ord_wbt_salesman_field_jan',
@@ -162,7 +114,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                   log.debug('internalIds', internalIds);
 
                   var salesRepName = [];
-                  var monthtotalArray = [];
+                //   var monthtotalArray = [];
                   var salesRepId= [];
                   for (var m = 0; m < internalIds.length; m++) {
                       var src_rec1 = record.load({
@@ -170,14 +122,14 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                           id: internalIds[m]
                       });
                   
-                      var monthValue = parseFloat(src_rec1.getValue({ fieldId: monthField })) || 0;
-                      monthtotalArray.push(monthValue);
+                    //   var monthValue = parseFloat(src_rec1.getValue({ fieldId: monthField })) || 0;
+                    //   monthtotalArray.push(monthValue);
                       salesRepName.push(src_rec1.getText("custrecord_impal_sales_executive_m_s"));
                       salesRepId.push(src_rec1.getValue("custrecord_impal_sales_executive_m_s"));
                   }
                   
                   log.debug('Internal IDs length:', internalIds.length);
-                  log.debug('Month Total Array:', monthtotalArray);
+                //   log.debug('Month Total Array:', monthtotalArray);
                   log.debug('Sales Rep Names Array:', salesRepName); // Logs the full array of sales rep names
                   if
                  (internalIds.length === 0) {       
@@ -190,238 +142,376 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 // Write the HTML response to the page
                 context.response.write(htmlContent);
                 return ;
-                // Stop further search and processing if no valid sales reps found
                 }
-               // Use the existing salesRepId array to define salesRepIds dynamically
-                var salesRepIds = salesRepId;
+           // for 30 days base saved search
+           var categorizedAmounts = {};
 
-                // Initialize salesRepAmounts with 0 for each sales rep ID
+           var invoiceSearchObj = search.create({
+               type: "invoice",
+               filters: [
+                   ["type", "anyof", "CustInvc"],
+                   "AND",
+                   ["status", "anyof", "CustInvc:A"],
+                   "AND",
+                   ["salesrep.salesrep", "is", "T"],
+                   "AND",
+                   ["salesrep", "anyof", salesRepId]
+               ],
+               columns: [
+                   search.createColumn({ name: "invoicenum", summary: "GROUP", label: "Invoice Number" }),
+                   search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                   search.createColumn({ name: "amount", summary: "SUM", label: "Amount" }),
+                   search.createColumn({ name: "trandate", summary: "GROUP", label: "Transaction Date" })
+               ]
+           });
+           // Import the format module
+// var format = require('N/format');
 
-                var salesRepAmounts = {}; // Object to map sales rep ID to amount
+// Get the current date
+var today = new Date();
+log.debug('Today', today);
 
-                salesRepIds.forEach(function(salesRepId) {
-                    salesRepAmounts[salesRepId] = 0; // Default to 0 in case there is no data for the sales rep
-                });
+// Calculate date ranges
+var date30DaysAgo = new Date(today);
+date30DaysAgo.setDate(today.getDate() - 30);
 
-                var lessThan30 = [];
-                var days31to60 = [];
-                var days61to90 = [];
-                var days91to180 = [];
-                var moreThan180 = [];
-                
-                var invoiceSearchObj = search.create({
-                    type: "invoice",
-                    settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
-                    filters: [
-                        ["type", "anyof", "CustInvc"],
-                        "AND",
-                        ["status", "anyof", "CustInvc:A"],
-                        "AND",
-                        ["salesrep.salesrep", "is", "T"],
-                        "AND",
-                        ["salesrep", "anyof", salesRepId]
-                    ],
-                    columns: [
-                        search.createColumn({
-                            name: "invoicenum",
-                            summary: "GROUP",
-                            label: "Invoice Number"
-                        }),
-                        search.createColumn({
-                            name: "salesrep",
-                            summary: "GROUP",
-                            label: "Sales Rep"
-                        }),
-                        search.createColumn({
-                            name: "amount",
-                            summary: "SUM",
-                            label: "Amount"
-                        }),
-                        search.createColumn({
-                            name: "trandate",
-                            summary: "GROUP",
-                            label: "Transaction Date"
-                        })
-                    ]
-                });
-                
-                var today = new Date();
-                log.debug('today', today);
-                
-                // Initialize arrays to store amounts based on their categorization
-                var lessThan30 = [];
-                var days31to60 = [];
-                var days61to90 = [];
-                var days91to180 = [];
-                var moreThan180 = [];
-                
-                invoiceSearchObj.run().each(function (result) {
-                    // Get the invoice amount
-                    var amount = parseFloat(result.getValue({
-                        name: "amount",
-                        summary: "SUM"
-                    }));
-                
-                    // Get the transaction date
-                    var transactionDateStr = result.getValue({
-                        name: "trandate",
-                        summary: "GROUP"
-                    });
-                
-                    var transactionDate = new Date(transactionDateStr);
-                    log.debug('transactionDate', transactionDate);
-                
-                    // Calculate the difference in time (milliseconds)
-                    var timeDiff = today.getTime() - transactionDate.getTime();
-                
-                    // Convert the time difference into days
-                    var daysDifference = Math.floor(timeDiff / (1000 * 3600 * 24));
-                
-                    log.debug('daysDifference', daysDifference);
-                
-                    // Categorize based on the days difference
-                    if (daysDifference < 30) { // < 30 days (same month or within the last 30 days)
-                        lessThan30.push(amount);
-                    } else if (daysDifference >= 31 && daysDifference <= 60) { // 31–60 days (previous month)
-                        days31to60.push(amount);
-                    } else if (daysDifference >= 61 && daysDifference <= 90) { // 61–90 days (two months back)
-                        days61to90.push(amount);
-                    } else if (daysDifference >= 91 && daysDifference <= 180) { // 91–180 days
-                        days91to180.push(amount);
-                    } else { // > 180 days
-                        moreThan180.push(amount);
-                    }
-                
-                    return true; // Continue iteration
-                });
-                
-                log.debug("Categorized Invoice Amounts - < 30 days", lessThan30);
-                log.debug("Categorized Invoice Amounts - 31 to 60 days", days31to60);
-                log.debug("Categorized Invoice Amounts - 61 to 90 days", days61to90);
-                log.debug("Categorized Invoice Amounts - 91 to 180 days", days91to180);
-                log.debug("Categorized Invoice Amounts - > 180 days", moreThan180);
-                
-                // Now you can use the arrays to build your table as needed
-                
-                var tr = '';
-                var td = '';
-                var serialNumber = 1;
-                
-                var less30 = 0;
-                var more31to60 = 0;
-                var more61to90 = 0;
-                var more91to180 =0;
-                var more180 =0;
-                for (var i = 0; i < internalIds.length; i++) {
-                    less30 = lessThan30[i] || 0;
-                    more31to60 = days31to60[i] || 0;
-                    more61to90 = days61to90[i] || 0;
-                    more91to180 = days91to180[i] || 0;
-                    more180 = moreThan180[i] || 0;
-                
-                    td = '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">' + salesRepName[i] + '</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">' + less30 + '</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">' + more31to60 + '</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">' + more61to90 + '</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+more91to180+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+more180+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
-                         '<td style="width: 15px;height:10px; border-right: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
-                         '<td  style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>';
-                
-                    tr += ' <tr border-bottom="1"  style="width: 10%;height:2%;">' + td + '</tr>';
-                    serialNumber++;
-                }
-                
-                // log.debug("Generated Table Rows", tr);
-                
-        
-    var xmlTemplateFile='<?xml version="1.0"?>\
-    <pdf>\
-    <head>\
-    </head>\
-    <body style="font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 20px; width: 250mm; height: 297mm;">\
-   <table border="1" style="width: 100%; border-collapse: collapse;">\
-    <tr  style="background-color: #9094c6; color: white;width: 10%;height:2%;">\
-      <td  border-bottom="1" colspan="12" style="align:center;  width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\COLLECTION Lacs</td>\
-    </tr>\
-    <tr border-bottom="1" style="background-color: #f9f9f9;width: 10%;height:2%;">\
-      <td border-right="1" border-bottom="1" rowspan="2" style="width: 15px;height:10px; background-color: rgb(255, 238, 192); padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\SI.No</td>\
-      <td border-right="1" border-bottom="1" rowspan="2" style="width: 15px;height:10px; background-color: rgb(255, 238, 192);padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sales Executive M/s</td>\
-      <td border-right="1" border-bottom="1" rowspan="2" style="width: 15px;height:10px; background-color: rgb(255, 238, 192);padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\O/S ason1st of the month</td>\
-      <td border-right="1" colspan="5" style="width: 15px;height:10px; background-color: rgb(255, 238, 192); padding: 4px; align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Outstanding Amount in</td>\
-   <td  colspan="4" style="width: 15px;height:10px; background-color: rgb(255, 238, 192); padding: 4px; align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Collection Lacs</td>\
-    </tr>\
-    <tr border-bottom="1"  style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
-      <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&lt;30 days</td>\
-      <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">31 -60 days</td>\
-      <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">61-90 days</td>\
-      <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">91-180 days</td>\
-      <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&gt;180</td>\
-      <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Day</td>\
-      <td border-right="1" style=" width: 15px;height:10px;  padding:4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Cumulative as of</td>\
-      <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">%</td>\
-      <td  border-right="none" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Balance Due</td>\
-    </tr>\
-   '+tr+'\
-        <tr border-bottom="none"  style="width: 10%;height:2%;">\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-        <td style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-    </tr>\
-  </table>\
- </body>\
-</pdf>';
-  // Create and configure the renderer
-  var renderer = render.create();
-  renderer.templateContent = xmlTemplateFile;
-  // Log renderer object for debugging
-  log.debug({
-    title: "Renderer Object",
-    details: renderer,
-  });
+var date60DaysAgo = new Date(today);
+date60DaysAgo.setDate(today.getDate() - 60);
 
-  // Add record to renderer
-  renderer.addRecord("record", loadPO);
-  // Render PDF
-  var invoicePdf = renderer.renderAsPdf();
+var date90DaysAgo = new Date(today);
+date90DaysAgo.setDate(today.getDate() - 90);
 
-  // Send the PDF as response
-  context.response.writeFile({
-    file: invoicePdf,
-    isInline: true,
-  });
-  }
-  }
+var date180DaysAgo = new Date(today);
+date180DaysAgo.setDate(today.getDate() - 180);
+
+// Format calculated dates
+var formatted30DaysAgo = format.format({
+    value: date30DaysAgo,
+    type: format.Type.DATE
+});
+var formatted60DaysAgo = format.format({
+    value: date60DaysAgo,
+    type: format.Type.DATE
+});
+var formatted90DaysAgo = format.format({
+    value: date90DaysAgo,
+    type: format.Type.DATE
+});
+var formatted180DaysAgo = format.format({
+    value: date180DaysAgo,
+    type: format.Type.DATE
+});
+
+// Log formatted date ranges
+log.debug('Formatted Date Ranges', {
+    formatted30DaysAgo: formatted30DaysAgo,
+    formatted60DaysAgo: formatted60DaysAgo,
+    formatted90DaysAgo: formatted90DaysAgo,
+    formatted180DaysAgo: formatted180DaysAgo
+});
+
+// Initialize categorized data
+var categorizedData = {
+    lessThan30: [],
+    days31to60: [],
+    days61to90: [],
+    days91to180: [],
+    moreThan180: []
+};
+
+invoiceSearchObj.run().each(function (result) {
+    var amount = parseFloat(result.getValue({ name: "amount", summary: "SUM" }));
+    var transactionDateStr = result.getValue({ name: "trandate", summary: "GROUP" });
 
   
-  catch(error) {
-  log.error({
-    title: "Error in Suitelet",
-    details: error.message,
-  });
+    // Clean the transaction date string (if needed)
+    var cleanDateStr = transactionDateStr.split(' ')[0]; // Retain only the date part
+    log.debug('Cleaned Transaction Date', cleanDateStr);
 
-  // Send error response to the user
-  context.response.write({
-    output: "An error occurred: " + error.message,
-  });
-  }
-  }
+    var transactionDate;
+    try {
+        // Parse the cleaned date string
+        transactionDate = format.parse({
+            value: cleanDateStr,
+            type: format.Type.DATE
+        });
 
-  return {
-  onRequest: onRequest,
-  };
-  });
+        // Validate parsed date
+        if (!transactionDate || isNaN(transactionDate.getTime())) {
+            throw new Error('Invalid parsed date: ' + cleanDateStr);
+        }
 
-    
+        // Format the parsed transaction date
+        var formattedTransactionDate = format.format({
+            value: transactionDate,
+            type: format.Type.DATE
+        });
+        log.debug('Formatted Transaction Date', formattedTransactionDate);
+
+    } catch (e) {
+        log.error('Date Parsing or Formatting Error', {
+            errorMessage: e.message,
+            transactionDateStr: transactionDateStr
+        });
+        return true; // Skip this record and continue with the next one
+    }
+
+    // Categorize based on the transaction date
+    if (transactionDate >= date30DaysAgo) {
+        categorizedData.lessThan30.push(amount);
+        log.debug('Less Than 30 Days', {
+            amount: amount,
+            transactionDate: formattedTransactionDate
+        });
+    } else if (transactionDate < date30DaysAgo && transactionDate >= date60DaysAgo) {
+        categorizedData.days31to60.push(amount);
+        log.debug('31 to 60 Days', {
+            amount: amount,
+            transactionDate: formattedTransactionDate
+        });
+    } else if (transactionDate < date60DaysAgo && transactionDate >= date90DaysAgo) {
+        categorizedData.days61to90.push(amount);
+        log.debug('61 to 90 Days', {
+            amount: amount,
+            transactionDate: formattedTransactionDate
+        });
+    } else if (transactionDate < date90DaysAgo && transactionDate >= date180DaysAgo) {
+        categorizedData.days91to180.push(amount);
+        log.debug('91 to 180 Days', {
+            amount: amount,
+            transactionDate: formattedTransactionDate
+        });
+    } else {
+        categorizedData.moreThan180.push(amount);
+        log.debug('More Than 180 Days', {
+            amount: amount,
+            transactionDate: formattedTransactionDate
+        });
+    }
+
+    return true; // Continue iteration
+});
+
+// Log the final categorized data
+log.debug('Final Categorized Data', JSON.stringify(categorizedData));
+
+                       
+               
+
+         //sales amount for sales rep
+         var todaySalesAmount = {};
+         var invoiceSearchObj = search.create({
+                 type: "invoice",
+                 settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
+                 filters: [
+                     ["type", "anyof", "CustInvc"], 
+                     "AND", 
+                     ["status", "anyof", "CustInvc:A"], 
+                     "AND", 
+                     ["salesrep.salesrep", "is", "T"], 
+                     "AND", 
+                     ["salesrep", "anyof", salesRepId], 
+                     "AND",
+                     ["trandate", "on", today]
+                 ],
+             columns: [
+                 search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                 search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
+             ]
+         });
+
+         var searchResultCount = invoiceSearchObj.runPaged().count;
+         log.debug("invoiceSearchObj result count", searchResultCount);
+
+         // Run the search and populate todaySalesAmount
+         invoiceSearchObj.run().each(function(result) {
+        var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+        var totalAmountForRep =parseFloat( result.getValue({ name: "amount", summary: "SUM" })) || 0;
+
+        // Store the amount for the corresponding sales rep ID
+        todaySalesAmount[salesRepId] = totalAmountForRep;
+
+             return true;
+         });
+         log.debug("Sales Rep  today sales Amounts", todaySalesAmount); // Logs amounts for each sales rep ID
+
+                //cum sales amount for sales rep
+                var cumSalesAmount = {};
+                var invoiceSearchObj = search.create({
+                        type: "invoice",
+                        settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
+                        filters: [
+                            ["type", "anyof", "CustInvc"], 
+                            "AND", 
+                            ["status", "anyof", "CustInvc:A"], 
+                            "AND", 
+                            ["salesrep.salesrep", "is", "T"], 
+                            "AND", 
+                            ["salesrep", "anyof", salesRepId], 
+                            "AND",
+                            ["trandate", "within", formattedStartDate, formattedEndDate]
+                        ],
+                    columns: [
+                        search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                        search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
+                    ]
+                });
+
+                var searchResultCount = invoiceSearchObj.runPaged().count;
+                log.debug("invoiceSearchObj result count", searchResultCount);
+
+                // Run the search and populate cumSalesAmount
+                invoiceSearchObj.run().each(function(result) {
+               var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+               var totalAmountForRep =parseFloat( result.getValue({ name: "amount", summary: "SUM" })) || 0;
+  
+               // Store the amount for the corresponding sales rep ID
+               cumSalesAmount[salesRepId] = totalAmountForRep;
+
+                    return true;
+                });
+                log.debug("Sales Rep Amounts", cumSalesAmount); // Logs amounts for each sales rep ID
+
+                var tr = '';
+                var td = '';
+
+                //sales for the day
+                var salesForDayTotal=0;
+                //for month sales
+                var cumsalesTotal = 0;
+                for (var i = 0; i < internalIds.length; i++) {
+                    var name = salesRepName[i];
+                    var salesForTheDay = todaySalesAmount[salesRepId[i]] || 0;
+                    salesForDayTotal += salesForTheDay;
+                    var cumSales = cumSalesAmount[salesRepId[i]] || 0;
+                    cumsalesTotal += cumSales; 
+
+                     // Retrieve categorized amounts
+    var categorizedData = categorizedAmounts[salesRepId[i]] || {
+        lessThan30: [],
+        days31to60: [],
+        days61to90: [],
+        days91to180: [],
+        moreThan180: []
+    };
+   
+                    var totalLessThan30 = categorizedData.lessThan30.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
+                    
+                    var totalDays31to60 = categorizedData.days31to60.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
+                    
+                    var totalDays61to90 = categorizedData.days61to90.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
+                    
+                    var totalDays91to180 = categorizedData.days91to180.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
+                    
+                    var totalMoreThan180 = categorizedData.moreThan180.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
+                    
+                
+                
+                    td = '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+name+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalLessThan30+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">'+totalDays31to60+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalDays61to90+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalDays91to180+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalMoreThan180+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+salesForTheDay+'</td>' +
+                         '<td style="width: 15px;height:10px; border-right: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumSales+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>'+
+                         '<td  style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>'
+                
+                    tr += ' <tr border-bottom="1"  style="width: 10%;height:2%;">' + td + '</tr>';     
+                }
+                
+                var xmlTemplateFile='<?xml version="1.0"?>\
+                <pdf>\
+                <head>\
+                </head>\
+                <body style="font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 20px; width: 250mm; height: 297mm;">\
+               <table border="1" style="width: 100%; border-collapse: collapse;">\
+                <tr  style="background-color: #9094c6; color: white;width: 10%;height:2%;">\
+                  <td  border-bottom="1" colspan="12" style="align:center;  width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\COLLECTION Lacs</td>\
+                </tr>\
+                <tr border-bottom="1" style="background-color: #f9f9f9;width: 10%;height:2%;">\
+                  <td border-right="1" border-bottom="1" rowspan="2" style="width: 15px;height:10px; background-color: rgb(255, 238, 192); padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\SI.No</td>\
+                  <td border-right="1" border-bottom="1" rowspan="2" style="width: 15px;height:10px; background-color: rgb(255, 238, 192);padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sales Executive M/s</td>\
+                  <td border-right="1" border-bottom="1" rowspan="2" style="width: 15px;height:10px; background-color: rgb(255, 238, 192);padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\O/S ason1st of the month</td>\
+                  <td border-right="1" colspan="5" style="width: 15px;height:10px; background-color: rgb(255, 238, 192); padding: 4px; align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Outstanding Amount in</td>\
+               <td  colspan="4" style="width: 15px;height:10px; background-color: rgb(255, 238, 192); padding: 4px; align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Collection Lacs</td>\
+                </tr>\
+                <tr border-bottom="1"  style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&lt;30 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">31 -60 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">61-90 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">91-180 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&gt;180</td>\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Day</td>\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding:4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Cumulative as of</td>\
+                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">%</td>\
+                  <td  border-right="none" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Balance Due</td>\
+                </tr>\
+               '+tr+'\
+                    <tr border-bottom="none"  style="width: 10%;height:2%;">\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+salesForDayTotal+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumsalesTotal+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                </tr>\
+              </table>\
+             </body>\
+            </pdf>';
+              // Create and configure the renderer
+              var renderer = render.create();
+              renderer.templateContent = xmlTemplateFile;
+              // Log renderer object for debugging
+              log.debug({
+                title: "Renderer Object",
+                details: renderer,
+              });
+              // Add record to renderer
+              renderer.addRecord("record", loadPO);
+              // Render PDF
+              var invoicePdf = renderer.renderAsPdf();
+              // Send the PDF as response
+              context.response.writeFile({
+                file: invoicePdf,
+                isInline: true,
+              });
+          }
+      }       
+              catch(error) {
+              log.error({
+                title: "Error in Suitelet",
+                details: error.message,
+              });   
+              // Send error response to the user
+              context.response.write({
+                output: "An error occurred: " + error.message,
+              });
+           }
+       }
+              return {
+              onRequest: onRequest,
+            };
+      });
+            
+                
+      
