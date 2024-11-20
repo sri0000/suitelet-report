@@ -220,8 +220,6 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 log.debug('Previous Month Start Date:', prev4formattedStartDate);
                 log.debug('Previous Month End Date:', prev4formattedEndDate);
 
-
-
                 // Map month abbreviations to their corresponding fields
                 var monthFieldMap = {
                     'Jan': 'custrec ord_wbt_salesman_field_jan',
@@ -707,6 +705,12 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 var more180Total = 0;
 
 
+                //O/s as on 1st of the month variable
+                var osAsAFirstMonthTotal = 0;
+                //% total
+                var percentTotal = 0;
+                //balanceDue
+                var balanceDueTotal =0;
 
                 //sales for the day
                 var salesForDayTotal=0;
@@ -733,19 +737,30 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     var more180days =  morethen180[salesRepId[i]] || 0;
                     more180Total += more180days;
 
-                
+
+                    var osAsAFirstMonth = less30days + less60days + less90days + less180days + more180days;
+                    osAsAFirstMonthTotal += osAsAFirstMonth;
+
+                    var percent = cumSales / osAsAFirstMonth;
+                    percentTotal +=percent;
+
+                    var balanceDue = Math.abs(osAsAFirstMonth - cumSales);
+
+                    balanceDueTotal += balanceDue;
+                    
+                    
                     td = '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+serialNumber+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+name+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less30days+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">'+less60days+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less90days+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less180days+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+more180days+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+salesForTheDay+'</td>' +
-                         '<td style="width: 15px;height:10px; border-right: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumSales+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>'+
-                         '<td  style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>'
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: left; vertical-align: middle; letter-spacing: normal;">'+name+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+osAsAFirstMonth.toFixed(2)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less30days.toFixed(2)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less60days.toFixed(2)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less90days.toFixed(2)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less180days.toFixed(2)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+more180days.toFixed(2)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(187, 221, 167);">'+salesForTheDay.toFixed(2)+'</td>' +
+                         '<td style="width: 15px;height:10px; border-right: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;background-color: rgb(187, 221, 167);">'+cumSales.toFixed(2)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+percent.toFixed(2)+'%'+'</td>'+
+                         '<td  style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+balanceDue.toFixed(2)+'</td>'
                 
                     tr += ' <tr border-bottom="1"  style="width: 10%;height:2%;">' + td + '</tr>';  
                     serialNumber++;   
@@ -768,30 +783,30 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                <td  colspan="4" style="width: 15px;height:10px; background-color: rgb(255, 238, 192); padding: 4px; align: center; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">\Collection Lacs</td>\
                 </tr>\
                 <tr border-bottom="1"  style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&lt;30 days</td>\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">31 -60 days</td>\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">61-90 days</td>\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">91-180 days</td>\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&gt;180</td>\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Day</td>\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding:4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Cumulative as of</td>\
-                  <td border-right="1" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">%</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&lt;30 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">31 -60 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">61-90 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">91-180 days</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">&gt;180</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Day</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding:4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">Cumulative as of</td>\
+                  <td border-right="1" style=" width: 15px;height:10px; padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">%</td>\
                   <td  border-right="none" style=" width: 15px;height:10px;  padding: 4px; align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle;">\Balance Due</td>\
                 </tr>\
                '+tr+'\
                     <tr border-bottom="none"  style="width: 10%;height:2%;">\
                     <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
                     <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less30Total+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less60Total+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">'+less90Total+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less180Total+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+more180Total+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+salesForDayTotal+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumsalesTotal+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-                    <td style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+osAsAFirstMonthTotal.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less30Total.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less60Total.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">'+less90Total.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less180Total.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+more180Total.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+salesForDayTotal.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumsalesTotal.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+percentTotal.toFixed(2)+'%'+'</td>\
+                    <td style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+balanceDueTotal.toFixed(2)+'</td>\
                 </tr>\
               </table>\
              </body>\
@@ -832,5 +847,3 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
       });
             
                 
-    //   CASE WHEN {ccustomrecord_impal_product_group_sales_.custrecord_imp_inv_sto_dat} >= ADD_MONTHS({today}, -3)
-    //   AND {ccustomrecord_impal_product_group_sales_.custrecord_imp_inv_sto_dat} <= {today} THEN 1 ELSE 0 END
