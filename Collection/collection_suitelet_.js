@@ -144,159 +144,115 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 return ;
                 }
            // for 30 days base saved search
-           var categorizedAmounts = {};
 
-           var invoiceSearchObj = search.create({
-               type: "invoice",
-               filters: [
-                   ["type", "anyof", "CustInvc"],
-                   "AND",
-                   ["status", "anyof", "CustInvc:A"],
-                   "AND",
-                   ["salesrep.salesrep", "is", "T"],
-                   "AND",
-                   ["salesrep", "anyof", salesRepId]
-               ],
-               columns: [
-                   search.createColumn({ name: "invoicenum", summary: "GROUP", label: "Invoice Number" }),
-                   search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                   search.createColumn({ name: "amount", summary: "SUM", label: "Amount" }),
-                   search.createColumn({ name: "trandate", summary: "GROUP", label: "Transaction Date" })
-               ]
-           });
-           // Import the format module
-// var format = require('N/format');
+        //    var openAmount = {};
+        //    var invoiceSearchObj = search.create({
+        //     type: "invoice",
+        //     settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
+        //     filters:
+        //     [
+        //        ["type","anyof","CustInvc"], 
+        //        "AND", 
+        //        ["status","anyof","CustInvc:A"], 
+        //        "AND", 
+        //        ["salesrep.salesrep","is","T"], 
+        //        "AND", 
+        //        ["salesrep","anyof",salesRepId], 
+        //        "AND", 
+        //        ["trandate", "within", "thismonthtodate"]
+        //         // "OR",
+        //         // ["trandate", "within", "lastmonth"],
+        //         // "OR",
+        //         // ["trandate", "within", "monthbeforelast"]
+            
+        //     //    , 
+        //     //    "AND", 
+        //     //    ["trandate","within","monthbeforelast"]
+        //     ],
+        //     columns:
+        //     [
+        //        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+        //        search.createColumn({name: "amount",summary: "SUM",label: "Amount"})
+        //     ]
+        //  });
+        //  var searchResultCount = invoiceSearchObj.runPaged().count;
+        //  log.debug("invoiceSearchObj result count",searchResultCount);
+        //  invoiceSearchObj.run().each(function(result){
+        //     var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+        //     var amount = parseFloat(result.getValue({ name: "amount", summary: "SUM" })) || 0;
 
-// Get the current date
-var today = new Date();
-log.debug('Today', today);
-
-// Calculate date ranges
-var date30DaysAgo = new Date(today);
-date30DaysAgo.setDate(today.getDate() - 30);
-
-var date60DaysAgo = new Date(today);
-date60DaysAgo.setDate(today.getDate() - 60);
-
-var date90DaysAgo = new Date(today);
-date90DaysAgo.setDate(today.getDate() - 90);
-
-var date180DaysAgo = new Date(today);
-date180DaysAgo.setDate(today.getDate() - 180);
-
-// Format calculated dates
-var formatted30DaysAgo = format.format({
-    value: date30DaysAgo,
-    type: format.Type.DATE
-});
-var formatted60DaysAgo = format.format({
-    value: date60DaysAgo,
-    type: format.Type.DATE
-});
-var formatted90DaysAgo = format.format({
-    value: date90DaysAgo,
-    type: format.Type.DATE
-});
-var formatted180DaysAgo = format.format({
-    value: date180DaysAgo,
-    type: format.Type.DATE
-});
-
-// Log formatted date ranges
-log.debug('Formatted Date Ranges', {
-    formatted30DaysAgo: formatted30DaysAgo,
-    formatted60DaysAgo: formatted60DaysAgo,
-    formatted90DaysAgo: formatted90DaysAgo,
-    formatted180DaysAgo: formatted180DaysAgo
-});
-
-// Initialize categorized data
-var categorizedData = {
-    lessThan30: [],
-    days31to60: [],
-    days61to90: [],
-    days91to180: [],
-    moreThan180: []
-};
-
-invoiceSearchObj.run().each(function (result) {
-    var amount = parseFloat(result.getValue({ name: "amount", summary: "SUM" }));
-    var transactionDateStr = result.getValue({ name: "trandate", summary: "GROUP" });
-
-  
-    // Clean the transaction date string (if needed)
-    var cleanDateStr = transactionDateStr.split(' ')[0]; // Retain only the date part
-    log.debug('Cleaned Transaction Date', cleanDateStr);
-
-    var transactionDate;
-    try {
-        // Parse the cleaned date string
-        transactionDate = format.parse({
-            value: cleanDateStr,
-            type: format.Type.DATE
+        //     // Store or accumulate the amount for the corresponding sales rep ID
+        //     if (!openAmount[salesRepId]) {
+        //         openAmount[salesRepId] = 0; // Initialize if not already
+        //     }
+        
+        //     openAmount[salesRepId] += amount; // Add to existing value
+        
+        //     return true; // Continue iteration
+        // });
+        // Combine month name and year to create postingPeriod
+        var postingPeriod = monthName + ' ' + year.toString(); // Example: "May 2023"
+        log.debug('Posting Period (Text)', postingPeriod);
+        
+        // Search for the posting period internal ID
+        var postingPeriodId;
+        var periodSearch = search.create({
+            type: "accountingperiod",
+            filters: [
+                ["periodname", "is", postingPeriod]
+            ],
+            columns: ["internalid"]
         });
-
-        // Validate parsed date
-        if (!transactionDate || isNaN(transactionDate.getTime())) {
-            throw new Error('Invalid parsed date: ' + cleanDateStr);
+        
+        periodSearch.run().each(function(result) {
+            postingPeriodId = result.getValue("internalid");
+            log.debug('Posting Period ID Found', postingPeriodId); // Log the ID if found
+            return false; // Exit after finding the first match
+        });
+        
+        if (!postingPeriodId) {
+            log.error("Error", "Posting period not found: " + postingPeriod);
+            return; // Stop further execution if posting period is not found
         }
+  
+    
+        // Proceed with the invoice search using the internal ID of the posting period
+        log.debug('Proceeding with Invoice Search', 'Posting Period ID: ' + postingPeriodId);
+        
+         var lessthen30 ={};
+        var invoiceSearchObj = search.create({
+            type: "invoice",
+            settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
+            filters: [
+                ["type", "anyof", "CustInvc"], 
+                "AND", 
+                ["status", "anyof", "CustInvc:A"], 
+                "AND", 
+                ["salesrep.salesrep", "is", "T"], 
+                "AND", 
+                ["salesrep", "anyof", salesRepId], 
+                "AND", 
+                ["postingperiod", "anyof", postingPeriodId] // Use the internal ID
+            ],
+            columns:
+            [
+               search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+               search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
+            ]
+         });
+         var searchResultCount = invoiceSearchObj.runPaged().count;
+         log.debug("invoiceSearchObj result count for less then 30 days",searchResultCount);
+         invoiceSearchObj.run().each(function(result){
+            var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+            var AmountLessthen30 = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 2;
+            // Store the amount for the corresponding sales rep ID
+            lessthen30[salesRepId] = AmountLessthen30;
 
-        // Format the parsed transaction date
-        var formattedTransactionDate = format.format({
-            value: transactionDate,
-            type: format.Type.DATE
+            return true; // Continue iteration
         });
-        log.debug('Formatted Transaction Date', formattedTransactionDate);
 
-    } catch (e) {
-        log.error('Date Parsing or Formatting Error', {
-            errorMessage: e.message,
-            transactionDateStr: transactionDateStr
-        });
-        return true; // Skip this record and continue with the next one
-    }
-
-    // Categorize based on the transaction date
-    if (transactionDate >= date30DaysAgo) {
-        categorizedData.lessThan30.push(amount);
-        log.debug('Less Than 30 Days', {
-            amount: amount,
-            transactionDate: formattedTransactionDate
-        });
-    } else if (transactionDate < date30DaysAgo && transactionDate >= date60DaysAgo) {
-        categorizedData.days31to60.push(amount);
-        log.debug('31 to 60 Days', {
-            amount: amount,
-            transactionDate: formattedTransactionDate
-        });
-    } else if (transactionDate < date60DaysAgo && transactionDate >= date90DaysAgo) {
-        categorizedData.days61to90.push(amount);
-        log.debug('61 to 90 Days', {
-            amount: amount,
-            transactionDate: formattedTransactionDate
-        });
-    } else if (transactionDate < date90DaysAgo && transactionDate >= date180DaysAgo) {
-        categorizedData.days91to180.push(amount);
-        log.debug('91 to 180 Days', {
-            amount: amount,
-            transactionDate: formattedTransactionDate
-        });
-    } else {
-        categorizedData.moreThan180.push(amount);
-        log.debug('More Than 180 Days', {
-            amount: amount,
-            transactionDate: formattedTransactionDate
-        });
-    }
-
-    return true; // Continue iteration
-});
-
-// Log the final categorized data
-log.debug('Final Categorized Data', JSON.stringify(categorizedData));
-
-                       
-               
+        // Log the sales rep amounts
+        log.debug("Sales Rep Today's Sales Amounts", lessthen30);
 
          //sales amount for sales rep
          var todaySalesAmount = {};
@@ -306,7 +262,7 @@ log.debug('Final Categorized Data', JSON.stringify(categorizedData));
                  filters: [
                      ["type", "anyof", "CustInvc"], 
                      "AND", 
-                     ["status", "anyof", "CustInvc:A"], 
+                     ["status","anyof","CustInvc:B"], 
                      "AND", 
                      ["salesrep.salesrep", "is", "T"], 
                      "AND", 
@@ -343,7 +299,7 @@ log.debug('Final Categorized Data', JSON.stringify(categorizedData));
                         filters: [
                             ["type", "anyof", "CustInvc"], 
                             "AND", 
-                            ["status", "anyof", "CustInvc:A"], 
+                            ["status","anyof","CustInvc:B"], 
                             "AND", 
                             ["salesrep.salesrep", "is", "T"], 
                             "AND", 
@@ -380,51 +336,25 @@ log.debug('Final Categorized Data', JSON.stringify(categorizedData));
                 //for month sales
                 var cumsalesTotal = 0;
                 for (var i = 0; i < internalIds.length; i++) {
+                    
                     var name = salesRepName[i];
                     var salesForTheDay = todaySalesAmount[salesRepId[i]] || 0;
                     salesForDayTotal += salesForTheDay;
                     var cumSales = cumSalesAmount[salesRepId[i]] || 0;
                     cumsalesTotal += cumSales; 
 
-                     // Retrieve categorized amounts
-    var categorizedData = categorizedAmounts[salesRepId[i]] || {
-        lessThan30: [],
-        days31to60: [],
-        days61to90: [],
-        days91to180: [],
-        moreThan180: []
-    };
-   
-                    var totalLessThan30 = categorizedData.lessThan30.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
-                    
-                    var totalDays31to60 = categorizedData.days31to60.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
-                    
-                    var totalDays61to90 = categorizedData.days61to90.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
-                    
-                    var totalDays91to180 = categorizedData.days91to180.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
-                    
-                    var totalMoreThan180 = categorizedData.moreThan180.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
-                    
-                
+                    //for open invoice amount
+                    // var lessthen30 =   openAmount[salesRepId[i]] || 0;
+
                 
                     td = '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
                          '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+name+'</td>' +
                          '<td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalLessThan30+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">'+totalDays31to60+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalDays61to90+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalDays91to180+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+totalMoreThan180+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>' +
                          '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+salesForTheDay+'</td>' +
                          '<td style="width: 15px;height:10px; border-right: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumSales+'</td>' +
                          '<td border-right="1" style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;"></td>'+
@@ -432,7 +362,7 @@ log.debug('Final Categorized Data', JSON.stringify(categorizedData));
                 
                     tr += ' <tr border-bottom="1"  style="width: 10%;height:2%;">' + td + '</tr>';     
                 }
-                
+                          
                 var xmlTemplateFile='<?xml version="1.0"?>\
                 <pdf>\
                 <head>\
@@ -514,4 +444,5 @@ log.debug('Final Categorized Data', JSON.stringify(categorizedData));
       });
             
                 
-      
+    //   CASE WHEN {ccustomrecord_impal_product_group_sales_.custrecord_imp_inv_sto_dat} >= ADD_MONTHS({today}, -3)
+    //   AND {ccustomrecord_impal_product_group_sales_.custrecord_imp_inv_sto_dat} <= {today} THEN 1 ELSE 0 END
