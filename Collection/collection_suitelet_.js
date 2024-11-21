@@ -73,6 +73,12 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 log.debug('End Date:', formattedEndDate);
   
 
+                //for tofixed
+                function formatNumber(value, decimals) {
+                    decimals = decimals === undefined ? 2 : decimals;  // Set a default of 2 if decimals is not provided
+                    var numberValue = Number(value);
+                    return isNaN(numberValue) ? 0 : numberValue.toFixed(decimals);
+                }
                      
                   //perivious 1 month start and end date 
                   if (monthNumber === undefined) {
@@ -271,8 +277,8 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                           id: internalIds[m]
                       });
                   
-                    //   var monthValue = parseFloat(src_rec1.getValue({ fieldId: monthField })) || 0;
-                    //   monthtotalArray.push(monthValue);
+                    //   var monthValue = src_rec1.getValue({ fieldId: monthField })) || 0;
+                   //   monthtotalArray.push(monthValue);
                       salesRepName.push(src_rec1.getText("custrecord_impal_sales_executive_m_s"));
                       salesRepId.push(src_rec1.getValue("custrecord_impal_sales_executive_m_s"));
                   }
@@ -300,36 +306,44 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 var invoiceSearchObj = search.create({
                     type: "invoice",
                     settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
-                    filters: [
-                        ["type", "anyof", "CustInvc"], 
+                    filters:    [
+                        ["type","anyof","CustInvc"], 
                         "AND", 
-                        ["status", "anyof", "CustInvc:A"], 
+                        ["status","anyof","CustInvc:A"], 
                         "AND", 
-                        ["salesrep.salesrep", "is", "T"], 
+                        ["salesrep.salesrep","is","T"], 
                         "AND", 
-                        ["salesrep", "anyof", salesRepId], 
-                       "AND", 
-                       ["trandate","within",formattedStartDate,formattedEndDate]
-                    ],
+                        ["salesrep","anyof",salesRepId], 
+                        "AND", 
+                        ["trandate","within",formattedStartDate,formattedEndDate]
+                     ],
+
                     columns:
                     [
                        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
-                       search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
+                       search.createColumn({name: "taxtotal",summary: "SUM",label: "Amount (Transaction Tax Total)"}),
+                       search.createColumn({name: "total",summary: "SUM",label: "Amount (Transaction Total)"}),
+                       search.createColumn({name: "formulacurrency",summary: "SUM",formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                            label: "Formula (Currency)"})
                     ]
                  });
                  var searchResultCount = invoiceSearchObj.runPaged().count;
                  log.debug("invoiceSearchObj result count for less then 30 days",searchResultCount);
                  invoiceSearchObj.run().each(function(result){
-                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                    var AmountLessthen30 = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 2;
+                    var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
+                    log.debug('x',salesRep)
+                    var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
+                    var total = result.getValue({name: "total",summary: "SUM"});
+                    var AmountLessthen30 = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0);
+                    log.debug('subtotal',AmountLessthen30)
                     // Store the amount for the corresponding sales rep ID
-                    lessthen30[salesRepId] = AmountLessthen30;
+                    lessthen30[salesRep] = AmountLessthen30;
+                    log.debug('30', lessthen30[salesRep])
         
                     return true; // Continue iteration
                 });
+
         
-                // Log the sales rep amounts
-                log.debug("Sales Rep Today's Sales Amounts", lessthen30);
         
                 //lessthen31 - 60
                 var lessthen60 ={};
@@ -350,22 +364,27 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     columns:
                     [
                        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
-                       search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
+                       search.createColumn({name: "taxtotal",summary: "SUM",label: "Amount (Transaction Tax Total)"}),
+                       search.createColumn({name: "total",summary: "SUM",label: "Amount (Transaction Total)"}),
+                       search.createColumn({name: "formulacurrency",summary: "SUM",formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                            label: "Formula (Currency)"})
                     ]
                  });
                  var searchResultCount = invoiceSearchObj.runPaged().count;
-                 log.debug("invoiceSearchObj result count for less then 30 days",searchResultCount);
+                 log.debug("invoiceSearchObj result count for less then 60 days",searchResultCount);
                  invoiceSearchObj.run().each(function(result){
-                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                    var AmountLessthen60 = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 2;
+                    var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
+                    var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
+                    var total = result.getValue({name: "total",summary: "SUM"});
+                    var AmountLessthen60 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
                     // Store the amount for the corresponding sales rep ID
-                    lessthen60[salesRepId] = AmountLessthen60;
+                    lessthen60[salesRep] = AmountLessthen60;
         
                     return true; // Continue iteration
                 });
         
                 // Log the sales rep amounts
-                log.debug("Sales Rep Today's Sales Amounts", lessthen60);
+                log.debug("Sales Rep lessthen 60 days  Sales Amounts", lessthen60);
         
 
                 //lessthen90
@@ -387,23 +406,28 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     ],
                     columns:
                     [
-                       search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
-                       search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
-                    ]
+                        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                        search.createColumn({name: "taxtotal",summary: "SUM",label: "Amount (Transaction Tax Total)"}),
+                        search.createColumn({name: "total",summary: "SUM",label: "Amount (Transaction Total)"}),
+                        search.createColumn({name: "formulacurrency",summary: "SUM",formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                             label: "Formula (Currency)"})
+                     ]
                  });
                  var searchResultCount = invoiceSearchObj.runPaged().count;
-                 log.debug("invoiceSearchObj result count for less then 30 days",searchResultCount);
+                 log.debug("invoiceSearchObj result count for less then 90 days",searchResultCount);
                  invoiceSearchObj.run().each(function(result){
-                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                    var AmountLessthen90 = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 2;
+                    var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
+                    var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
+                    var total = result.getValue({name: "total",summary: "SUM"});
+                    var AmountLessthen90 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
                     // Store the amount for the corresponding sales rep ID
-                    lessthen90[salesRepId] = AmountLessthen90;
+                    lessthen90[salesRep] = AmountLessthen90;
         
                     return true; // Continue iteration
                 });
         
                 // Log the sales rep amounts
-                log.debug("Sales Rep Today's Sales Amounts", lessthen90);
+                log.debug("Sales Rep lessthen 90 days 's Sales Amounts", lessthen90);
 
                 //lessthen180
                 
@@ -424,23 +448,28 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     ],
                     columns:
                     [
-                       search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
-                       search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
-                    ]
+                        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                        search.createColumn({name: "taxtotal",summary: "SUM",label: "Amount (Transaction Tax Total)"}),
+                        search.createColumn({name: "total",summary: "SUM",label: "Amount (Transaction Total)"}),
+                        search.createColumn({name: "formulacurrency",summary: "SUM",formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                             label: "Formula (Currency)"})
+                     ]
                  });
                  var searchResultCount = invoiceSearchObj.runPaged().count;
-                 log.debug("invoiceSearchObj result count for less then 30 days",searchResultCount);
+                 log.debug("invoiceSearchObj result count for less then 180 days",searchResultCount);
                  invoiceSearchObj.run().each(function(result){
-                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                    var AmountLessthen180 = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 2;
+                    var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
+                    var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
+                    var total = result.getValue({name: "total",summary: "SUM"});
+                    var AmountLessthen180 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
                     // Store the amount for the corresponding sales rep ID
-                    lessthen180[salesRepId] = AmountLessthen180;
+                    lessthen180[salesRep] = AmountLessthen180;
         
                     return true; // Continue iteration
                 });
         
                 // Log the sales rep amounts
-                log.debug("Sales Rep Today's Sales Amounts", lessthen180);
+                log.debug("Sales Rep lessthen 180 days 's Sales Amounts", lessthen180);
         
         
                 //morethen180
@@ -465,160 +494,28 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                      columns:
                      [
                         search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
-                        search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
+                        search.createColumn({name: "taxtotal",summary: "SUM",label: "Amount (Transaction Tax Total)"}),
+                        search.createColumn({name: "total",summary: "SUM",label: "Amount (Transaction Total)"}),
+                        search.createColumn({name: "formulacurrency",summary: "SUM",formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                             label: "Formula (Currency)"})
                      ]
                   });
                   var searchResultCount = invoiceSearchObj.runPaged().count;
-                  log.debug("invoiceSearchObj result count for less then 30 days",searchResultCount);
+                  log.debug("invoiceSearchObj result count for more then 180 days",searchResultCount);
                   invoiceSearchObj.run().each(function(result){
-                     var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                     var Amountmore180 = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 2;
+                    var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
+                    var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
+                    var total = result.getValue({name: "total",summary: "SUM"});
+                    var Amountmore180 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
                      // Store the amount for the corresponding sales rep ID
-                     morethen180[salesRepId] = Amountmore180;
+                     morethen180[salesRep] = Amountmore180;
          
                      return true; // Continue iteration
                  });
          
                  // Log the sales rep amounts
-                 log.debug("Sales Rep Today's Sales Amounts", morethen180);
+                 log.debug("Sales Rep more then 180 day's  Sales Amounts", morethen180);
          
-// var postingPeriods=[];
-//                 // Loop for the last 4 months
-// for (var i = 1; i <= 4; i++) {
-//     var previousDate =  monthName - i;
-
-//     log.debug( 'perivious month name ',previousDate)
-//     // Extract month name and year
-//     var monthName = previousDate;
-//     // var year = previousDate;
-
-//     // Combine into "Month Year" format
-//     var postingPeriod = monthName + ' ' + year.toString(); // e.g., "May 2023"
-
-//     // Store in an array
-//     postingPeriods.push(postingPeriod);
-
-//     // Log each posting period
-//     log.debug('Posting Period (-' + i + ' Month)', postingPeriod);
-// }
-
-// // Example: Access individual posting periods
-// var postingPeriodMinus1 = postingPeriods[0]; // -1 month
-// var postingPeriodMinus2 = postingPeriods[1]; // -2 months
-// var postingPeriodMinus3 = postingPeriods[2]; // -3 months
-// var postingPeriodMinus4 = postingPeriods[3]; // -4 months
-
-// // Log the full array of posting periods
-// log.debug('All Posting Periods', postingPeriods);
-           // for 30 days base saved search
-
-        //    var openAmount = {};
-        //    var invoiceSearchObj = search.create({
-        //     type: "invoice",
-        //     settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
-        //     filters:
-        //     [
-        //        ["type","anyof","CustInvc"], 
-        //        "AND", 
-        //        ["status","anyof","CustInvc:A"], 
-        //        "AND", 
-        //        ["salesrep.salesrep","is","T"], 
-        //        "AND", 
-        //        ["salesrep","anyof",salesRepId], 
-        //        "AND", 
-        //        ["trandate", "within", "thismonthtodate"]
-        //         // "OR",
-        //         // ["trandate", "within", "lastmonth"],
-        //         // "OR",
-        //         // ["trandate", "within", "monthbeforelast"]
-            
-        //     //    , 
-        //     //    "AND", 
-        //     //    ["trandate","within","monthbeforelast"]
-        //     ],
-        //     columns:
-        //     [
-        //        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
-        //        search.createColumn({name: "amount",summary: "SUM",label: "Amount"})
-        //     ]
-        //  });
-        //  var searchResultCount = invoiceSearchObj.runPaged().count;
-        //  log.debug("invoiceSearchObj result count",searchResultCount);
-        //  invoiceSearchObj.run().each(function(result){
-        //     var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-        //     var amount = parseFloat(result.getValue({ name: "amount", summary: "SUM" })) || 0;
-
-        //     // Store or accumulate the amount for the corresponding sales rep ID
-        //     if (!openAmount[salesRepId]) {
-        //         openAmount[salesRepId] = 0; // Initialize if not already
-        //     }
-        
-        //     openAmount[salesRepId] += amount; // Add to existing value
-        
-        //     return true; // Continue iteration
-        // });
-        // Combine month name and year to create postingPeriod
-        // var postingPeriod = monthName + ' ' + year.toString(); // Example: "May 2023"
-        // log.debug('Posting Period (Text)', postingPeriod);
-        
-        // // Search for the posting period internal ID
-        // var postingPeriodId;
-        // var periodSearch = search.create({
-        //     type: "accountingperiod",
-        //     filters: [
-        //         ["periodname", "is", postingPeriod]
-        //     ],
-        //     columns: ["internalid"]
-        // });
-        
-        // periodSearch.run().each(function(result) {
-        //     postingPeriodId = result.getValue("internalid");
-        //     log.debug('Posting Period ID Found', postingPeriodId); // Log the ID if found
-        //     return false; // Exit after finding the first match
-        // });
-        
-        // if (!postingPeriodId) {
-        //     log.error("Error", "Posting period not found: " + postingPeriod);
-        //     return; // Stop further execution if posting period is not found
-        // }
-        // // Proceed with the invoice search using the internal ID of the posting period
-        // log.debug('Proceeding with Invoice Search', 'Posting Period ID: ' + postingPeriodId);
-        
-        //  var lessthen30 ={};
-        // var invoiceSearchObj = search.create({
-        //     type: "invoice",
-        //     settings: [{"name": "consolidationtype", "value": "ACCTTYPE"}],
-        //     filters: [
-        //         ["type", "anyof", "CustInvc"], 
-        //         "AND", 
-        //         ["status", "anyof", "CustInvc:A"], 
-        //         "AND", 
-        //         ["salesrep.salesrep", "is", "T"], 
-        //         "AND", 
-        //         ["salesrep", "anyof", salesRepId], 
-        //        "AND", 
-        //        ["trandate","within","01/07/2024","31/07/2024"]
-        //     ],
-        //     columns:
-        //     [
-        //        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
-        //        search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
-        //     ]
-        //  });
-        //  var searchResultCount = invoiceSearchObj.runPaged().count;
-        //  log.debug("invoiceSearchObj result count for less then 30 days",searchResultCount);
-        //  invoiceSearchObj.run().each(function(result){
-        //     var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-        //     var AmountLessthen30 = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 2;
-        //     // Store the amount for the corresponding sales rep ID
-        //     lessthen30[salesRepId] = AmountLessthen30;
-
-        //     return true; // Continue iteration
-        // });
-
-        // // Log the sales rep amounts
-        // log.debug("Sales Rep Today's Sales Amounts", lessthen30);
-
          //sales amount for sales rep
          var todaySalesAmount = {};
          var invoiceSearchObj = search.create({
@@ -636,8 +533,11 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                      ["trandate", "on", today]
                  ],
              columns: [
-                 search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                 search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
+                search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                search.createColumn({name: "taxtotal",summary: "SUM",label: "Amount (Transaction Tax Total)"}),
+                search.createColumn({name: "total",summary: "SUM",label: "Amount (Transaction Total)"}),
+                search.createColumn({name: "formulacurrency",summary: "SUM",formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                     label: "Formula (Currency)"})
              ]
          });
 
@@ -646,11 +546,14 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
          // Run the search and populate todaySalesAmount
          invoiceSearchObj.run().each(function(result) {
-        var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-        var totalAmountForRep =parseFloat( result.getValue({ name: "amount", summary: "SUM" })) || 0;
+            var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
+            var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
+            var total = result.getValue({name: "total",summary: "SUM"});
+            var totalAmountForRep = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+            
 
         // Store the amount for the corresponding sales rep ID
-        todaySalesAmount[salesRepId] = totalAmountForRep;
+        todaySalesAmount[salesRep] = totalAmountForRep;
 
              return true;
          });
@@ -673,9 +576,12 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                             ["trandate", "within", formattedStartDate, formattedEndDate]
                         ],
                     columns: [
-                        search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                        search.createColumn({ name: "amount", summary: "SUM", label: "Amount" })
-                    ]
+                        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                        search.createColumn({name: "taxtotal",summary: "SUM",label: "Amount (Transaction Tax Total)"}),
+                        search.createColumn({name: "total",summary: "SUM",label: "Amount (Transaction Total)"}),
+                        search.createColumn({name: "formulacurrency",summary: "SUM", formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                             label: "Formula (Currency)"})
+                     ]
                 });
 
                 var searchResultCount = invoiceSearchObj.runPaged().count;
@@ -683,11 +589,14 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
                 // Run the search and populate cumSalesAmount
                 invoiceSearchObj.run().each(function(result) {
-               var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-               var totalAmountForRep =parseFloat( result.getValue({ name: "amount", summary: "SUM" })) || 0;
+                    var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
+                    var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
+                    var total = result.getValue({name: "total",summary: "SUM"});
+                    var totalAmountForRep1 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+                    
   
                // Store the amount for the corresponding sales rep ID
-               cumSalesAmount[salesRepId] = totalAmountForRep;
+               cumSalesAmount[salesRep] = totalAmountForRep1;
 
                     return true;
                 });
@@ -716,34 +625,40 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                 var salesForDayTotal=0;
                 //for month sales
                 var cumsalesTotal = 0;
+                
                 for (var i = 0; i < internalIds.length; i++) {
                     
                     var name = salesRepName[i];
-                    var salesForTheDay = todaySalesAmount[salesRepId[i]] || 0;
+                    var salesForTheDay = parseFloat(todaySalesAmount[salesRepId[i]] || 0);
                     salesForDayTotal += salesForTheDay;
-                    var cumSales = cumSalesAmount[salesRepId[i]] || 0;
+                    var cumSales = parseFloat(cumSalesAmount[salesRepId[i]] || 0);
                     cumsalesTotal += cumSales; 
 
                     //for open invoice amount
                     // var lessthen30 =   openAmount[salesRepId[i]] || 0;
-                    var less30days = lessthen30[salesRepId[i]] || 0; 
+                    var less30days = parseFloat(lessthen30[salesRepId[i]] || 0); 
+                    log.debug('lessthen 30 days amount',less30days)
                     less30Total +=less30days;
-                    var less60days = lessthen60[salesRepId[i]] || 0; 
+                    var less60days = parseFloat(lessthen60[salesRepId[i]] || 0); 
+                    log.debug('lessthen  60 days amount',less60days)
                     less60Total += less60days;
-                    var less90days = lessthen90[salesRepId[i]] || 0; 
+                    var less90days = parseFloat(lessthen90[salesRepId[i]] || 0); 
+                    log.debug('lessthen  90 days amount',less90days)
                     less90Total += less90days;
-                    var less180days = lessthen180[salesRepId[i]] || 0; 
+                    var less180days = parseFloat(lessthen180[salesRepId[i]] || 0); 
+                    log.debug('lessthen  180 days amount',less180days)
                     less180Total += less180days;
-                    var more180days =  morethen180[salesRepId[i]] || 0;
+                    var more180days =  parseFloat(morethen180[salesRepId[i]] || 0);
+                    log.debug('more then  180 days amount',less180days)
                     more180Total += more180days;
 
 
                     var osAsAFirstMonth = less30days + less60days + less90days + less180days + more180days;
                     osAsAFirstMonthTotal += osAsAFirstMonth;
 
-                    var percent = cumSales / osAsAFirstMonth;
-                    percentTotal +=percent;
-
+                    var percent = osAsAFirstMonth !== 0 ? cumSales / osAsAFirstMonth : 0 || 0;
+                    percentTotal += percent;
+                    
                     var balanceDue = Math.abs(osAsAFirstMonth - cumSales);
 
                     balanceDueTotal += balanceDue;
@@ -751,16 +666,16 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     
                     td = '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+serialNumber+'</td>' +
                          '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: left; vertical-align: middle; letter-spacing: normal;">'+name+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+osAsAFirstMonth.toFixed(2)+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less30days.toFixed(2)+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less60days.toFixed(2)+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less90days.toFixed(2)+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+less180days.toFixed(2)+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+more180days.toFixed(2)+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(187, 221, 167);">'+salesForTheDay.toFixed(2)+'</td>' +
-                         '<td style="width: 15px;height:10px; border-right: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;background-color: rgb(187, 221, 167);">'+cumSales.toFixed(2)+'</td>' +
-                         '<td border-right="1" style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+percent.toFixed(2)+'%'+'</td>'+
-                         '<td  style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+balanceDue.toFixed(2)+'</td>'
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(osAsAFirstMonth)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+formatNumber(less30days)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+formatNumber(less60days)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+formatNumber(less90days)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+formatNumber(less180days)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(178, 212, 218);">'+formatNumber(more180days)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(187, 221, 167);">'+formatNumber(salesForTheDay)+'</td>' +
+                         '<td style="width: 15px;height:10px; border-right: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;background-color: rgb(187, 221, 167);">'+formatNumber(cumSales)+'</td>' +
+                         '<td border-right="1" style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(percent)+'%'+'</td>'+
+                         '<td  style="width: 15px;height:10px;   padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(balanceDue)+'</td>'
                 
                     tr += ' <tr border-bottom="1"  style="width: 10%;height:2%;">' + td + '</tr>';  
                     serialNumber++;   
@@ -797,16 +712,16 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     <tr border-bottom="none"  style="width: 10%;height:2%;">\
                     <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
                     <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+osAsAFirstMonthTotal.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less30Total.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less60Total.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">'+less90Total.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+less180Total.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+more180Total.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+salesForDayTotal.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+cumsalesTotal.toFixed(2)+'</td>\
-                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+percentTotal.toFixed(2)+'%'+'</td>\
-                    <td style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+balanceDueTotal.toFixed(2)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding:4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(osAsAFirstMonthTotal)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(less30Total)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(less60Total)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(less90Total)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(less180Total)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(more180Total)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(salesForDayTotal)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(cumsalesTotal)+'</td>\
+                    <td border-right="1" style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(percentTotal)+'%'+'</td>\
+                    <td style="width: 15px;height:10px; padding: 4px; font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+formatNumber(balanceDueTotal)+'</td>\
                 </tr>\
               </table>\
              </body>\
