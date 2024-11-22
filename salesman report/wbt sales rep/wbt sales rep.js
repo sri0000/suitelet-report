@@ -119,6 +119,42 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
           log.debug('Start Date of the Fiscal Month April:', formattedFiscalStartDate);
           log.debug('End Date Month of the Selected Month Before Month:', formattedFicalEndDate);
 
+          //dearler addition and deletion start and end date
+          
+var dealerSMI = monthMap[monthName];// Assuming fiscal year starts in March (zero-based index: 2) (SMI selected Month index)
+var DealerFiscalStartMonth = 2; // March
+var dealerFiscalEndMonth = 2;   // Also March (fixed period)
+
+// Determine fiscal year logic based on selected month
+var dealerFiscalYearStart;
+var dealerFiscalYearEnd;
+
+if (dealerSMI < DealerFiscalStartMonth) {
+    dealerFiscalYearStart = year - 3; // Fiscal year starts two years before for months before March
+    dealerFiscalYearEnd = year - 1;   // Fiscal year ends one year before
+} else {
+    dealerFiscalYearStart = year - 2; // Fiscal year starts one year before for months March and after
+    dealerFiscalYearEnd = year;       // Fiscal year ends in the current year
+}
+
+// Calculate the fiscal start and end dates
+var dealerFiscalStartDate = new Date(dealerFiscalYearStart, DealerFiscalStartMonth, 1); // March 1st of fiscal start year
+var dealerFiscalEndDate = new Date(dealerFiscalYearEnd, dealerFiscalEndMonth + 1, 0);  // March 31st of fiscal end year
+
+// Format the dates
+var formattedFiscalStartDate = format.format({
+    value: dealerFiscalStartDate,
+    type: format.Type.DATE
+});
+var formattedFiscalEndDate = format.format({
+    value: dealerFiscalEndDate,
+    type: format.Type.DATE
+});
+
+// Log the results
+log.debug('dealer Addition And Deletion Year Start Date:', formattedFiscalStartDate);
+log.debug('dealer Addition And Deletion Year End Date:', formattedFiscalEndDate);
+
               // Map month abbreviations to their corresponding fields
               var monthFieldMap = {
                   'Jan': 'custrec ord_wbt_salesman_field_jan',
@@ -505,9 +541,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                          "AND", 
                          ["salesrep.salesrep","is","T"], 
                          "AND", 
-                         ["salesrep","anyof","653","655"], 
+                         ["salesrep","anyof",salesRepIds], 
                          "AND", 
-                         ["customer.datecreated","onorbefore","22/11/2024 11:59 pm"], 
+                         ["customer.datecreated","within",formattedFiscalStartDate,formattedFiscalEndDate], 
                          "AND", 
                          ["mainline","is","T"]
                       ],
@@ -529,14 +565,12 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                    });
                    log.debug('custCount',custCount)
 
+                 
 
    
               function roundToTwoDecimals(value) {
                   return Math.round(value * 100) / 100;
                   }
-              // var workingDayForMOn = 26;
-              // var completedWorkDay = 1;
-              // var balance_For_day = 25;
 
               var avgDay =0;
               var avgDayTotal=0;
@@ -698,6 +732,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
           var targetForTheFy24to25 = customer_count*1.2;
           targetForTheFy24to25Total += targetForTheFy24to25;
+          
           td3 ='<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; border-left: 1px solid black;">'+serialNumber+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+salesRepName[i]+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+customer_count+'</td>'+
