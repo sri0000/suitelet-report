@@ -997,6 +997,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               var less_total =0;
               var grater_4_To_7_Total = 0;
               var grater_8_Total =0;
+              var sm_Wise_Total =0;
 
               for (var i = 0; i < internalIds.length; i++) {
                   //first table sales
@@ -1136,6 +1137,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
            var grater_then_8 = parseFloat(graterThen8[salesRepId]) || 0;
            grater_8_Total += grater_then_8;
+
+           var tot_deal_Sm_Wise = totalNoOfDealers === 0 ? 0 : grater_then_8 / totalNoOfDealers; // total dealer sales man wise
+           sm_Wise_Total += tot_deal_Sm_Wise;
           td3 ='<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; border-left: 1px solid black;">'+serialNumber+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+salesRepName[i]+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+customer_count+'</td>'+
@@ -1147,7 +1151,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_8+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_4_to_7+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+less_then_3+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; align: center;  border-bottom: 1px solid black; border-right: 1px solid black;"></td>';
+          '<td  style="width: 15px;height:10px;  padding: 6px; align: center;  border-bottom: 1px solid black; border-right: 1px solid black;">'+tot_deal_Sm_Wise+'</td>';
 
     tr3 += '<tr style="width: 10%;height:2%;">'+ td3 +'</tr>' ;
          serialNumber++;
@@ -1343,7 +1347,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+grater_8_Total+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+grater_4_To_7_Total+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+less_total+'</td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-bottom: 1px solid black; font-weight: bold; border-right: 1px solid black;"></td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-bottom: 1px solid black; font-weight: bold; border-right: 1px solid black;">'+sm_Wise_Total+'</td>\
             </tr>\
           </table>\
 </body>\
