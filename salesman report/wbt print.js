@@ -155,25 +155,25 @@ log.debug('dealer Addition And Deletion Year Start Date:', formattedFiscalStartD
 log.debug('dealer Addition And Deletion Year End Date:', formattedFiscalEndDate);
 
 //for added new customer in april to current month
-var addedCustSMI = monthMap[monthName];// Assuming fiscal year starts in March (zero-based index: 2) (SMI selected Month index)
-var addedFiscalStartMonth = 3; // March
-var addedFiscalEndMonth = monthNumber;   // Also March (fixed period)
+var addedCustSMI = monthMap[monthName];// Assuming fiscal year starts in April (SMI selected Month index)
+var addedFiscalStartMonth = 3; // April
+var addedFiscalEndMonth = monthNumber;  
 
 // Determine fiscal year logic based on selected month
 var addedFiscalYearStart;
 var addedFiscalYearEnd;
 
 if (addedCustSMI < addedFiscalStartMonth) {
-    addedFiscalYearStart = year - 1; // Fiscal year starts two years before for months before March
-    addedFiscalYearEnd = year; // Fiscal year ends one year before
+    addedFiscalYearStart = year - 1; 
+    addedFiscalYearEnd = year; 
 } else {
-    addedFiscalYearStart = year; // Fiscal year starts one year before for months March and after
-    addedFiscalYearEnd = year;       // Fiscal year ends in the current year
+    addedFiscalYearStart = year;
+    addedFiscalYearEnd = year; 
 }
 
 // Calculate the fiscal start and end dates
-var addedFiscalStartDate = new Date(addedFiscalYearStart, addedFiscalStartMonth, 1); // March 1st of fiscal start year
-var addedFiscalEndDate = new Date(addedFiscalYearEnd, addedFiscalEndMonth + 1, 0);  // March 31st of fiscal end year
+var addedFiscalStartDate = new Date(addedFiscalYearStart, addedFiscalStartMonth, 1); // April 1st of fiscal start year
+var addedFiscalEndDate = new Date(addedFiscalYearEnd, addedFiscalEndMonth + 1, 0);  // April 31st of fiscal end year
 
 // Format the dates
 var addformattedFiscalStartDate = format.format({
@@ -194,18 +194,107 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
   // Adjust for previous month
   var prevMonthsOfYear = monthNumber - 3;
   var prevYear = year;
+  
+  //end date and year
+  var less_3_EndMonth =  monthNumber - 3;
+  var less_3_EndYear = year;
 
   // If the month goes below 0, wrap around to December of the previous year
   if (prevMonthsOfYear < 0) {
       prevMonthsOfYear += 12; // Wrap back to the range [0-11]
       prevYear -= 1;   // Adjust the year
       }
+       //end date and year
+       if (less_3_EndMonth < 0) {
+        less_3_EndMonth += 12; // Wrap back to the range [0-11]
+        less_3_EndYear -= 1;   // Adjust the year
+        }
   // Calculate the start and end dates for the previous month
-  var graterThen8startDate = new Date(prevYear, prevMonthsOfYear, 1);
-  log.debug("Start Date grater then 8 months", graterThen8startDate);
+  var lessThen3startDate = new Date(prevYear, prevMonthsOfYear, 1);
+  // log.debug("Start Date less then <3 months", lessThen3startDate);
 
-  var graterThen8endDate = new Date(prevYear, monthNumber + 1, 0);
-  log.debug("End Date grater then 8 months", graterThen8endDate);
+  var lessThen3endDate = new Date(less_3_EndYear, monthNumber + 1, 0);
+  // log.debug("End Date less then <3 months", lessThen3endDate);
+
+  // Format the dates
+  var less3formattedStartDate = format.format({
+      value: lessThen3startDate,
+      type: format.Type.DATE
+  });
+  var less3formattedEndDate = format.format({
+      value: lessThen3endDate,
+      type: format.Type.DATE
+  });
+
+  log.debug('Start Date less then <3 months:', less3formattedStartDate);
+  log.debug('End Date less then <3 months:', less3formattedEndDate);
+
+
+  //>= 4 to 7 month customer count
+  var prev4To7MonthsOfYear = monthNumber - 7;
+  var prev4To7Year = year;
+   //end date and year
+   var grater_4_To_7_EndMonth =  monthNumber - 3;
+   var grater_4_To_7_EndYear = year;
+
+  // If the month goes below 0, wrap around to December of the previous year
+  if (prev4To7MonthsOfYear < 0) {
+      prev4To7MonthsOfYear += 12; // Wrap back to the range [0-11]
+      prev4To7Year -= 1;   // Adjust the year
+      }
+
+       //end date and year
+       if (grater_4_To_7_EndMonth < 0) {
+        grater_4_To_7_EndMonth += 12; // Wrap back to the range [0-11]
+        grater_4_To_7_EndYear -= 1; 
+        }
+  // Calculate the start and end dates for the previous month
+  var graterThen4To7startDate = new Date(prev4To7Year, prev4To7MonthsOfYear, 1);
+  // log.debug("Start Date grater then 8 months", graterThen4To7startDate);
+  var graterThen4To7endDate = new Date(grater_4_To_7_EndYear, grater_4_To_7_EndMonth, 0);
+  // log.debug("End Date grater then 8 months", graterThen4To7endDate);
+
+  // Format the dates
+  var grater4To7formattedStartDate = format.format({
+      value: graterThen4To7startDate,
+      type: format.Type.DATE
+  });
+  var grater4To7formattedEndDate = format.format({
+      value: graterThen4To7endDate,
+      type: format.Type.DATE
+  });
+
+  log.debug('Start Date grater then 4 to 7 months:', grater4To7formattedStartDate);
+  log.debug('End Date grater then  4 to 7  months:', grater4To7formattedEndDate);
+
+
+  //>=8 customer count 
+  //>= 4 to 7 month customer count
+  var grater8MonthsOfYear = monthNumber - 12;
+  var grat8Year = year;
+
+
+  //end date and year
+   var grater_8_EndMonth = monthNumber - 7;
+   var grater_8_EndYear = year;
+  // If the month goes below 0, wrap around to December of the previous year
+  if (grater8MonthsOfYear < 0) {
+      grater8MonthsOfYear += 12; // Wrap back to the range [0-11]
+      grat8Year -= 1;   // Adjust the year
+      }
+      //end date and year
+      if (grater_8_EndMonth < 0) {
+        log.debug('good working if condition ')
+
+        grater_8_EndMonth += 12; // Wrap back to the range [0-11]
+        grater_8_EndYear-= 1; 
+        }
+  // Calculate the start and end dates for the previous month
+  var graterThen8startDate = new Date(grat8Year, grater8MonthsOfYear, 1);
+  // log.debug("Start Date grater then >=8 months", graterThen8startDate);
+
+  var graterThen8endDate = new Date(grater_8_EndYear, grater_8_EndMonth, 0);
+  // log.debug("End Date grater then >=8 months", graterThen8endDate);
 
   // Format the dates
   var grater8formattedStartDate = format.format({
@@ -217,38 +306,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
       type: format.Type.DATE
   });
 
-  log.debug('Start Date grater then 8 months:', grater8formattedStartDate);
-  log.debug('End Date grater then 8 months:', grater8formattedEndDate);
+  log.debug('Start Date grater then >=8 months:', grater8formattedStartDate);
+  log.debug('End Date grater then  >=8  months:', grater8formattedEndDate);
 
-
-  //>= 4 to 7 month customer count
-  var prev4To7MonthsOfYear = monthNumber - 7;
-  var prev4To7Year = year;
-
-  // If the month goes below 0, wrap around to December of the previous year
-  if (prev4To7MonthsOfYear < 0) {
-      prev4To7MonthsOfYear += 12; // Wrap back to the range [0-11]
-      prev4To7Year -= 1;   // Adjust the year
-      }
-  // Calculate the start and end dates for the previous month
-  var graterThen4To7startDate = new Date(prev4To7Year, prevMonthsOfYear, 1);
-  log.debug("Start Date grater then 8 months", graterThen4To7startDate);
-
-  var graterThen4To7endDate = new Date(prev4To7Year, prevMonthsOfYear - 1, 0);
-  log.debug("End Date grater then 8 months", graterThen4To7endDate);
-
-  // Format the dates
-  var grater4To7formattedStartDate = format.format({
-      value: graterThen4To7startDate,
-      type: format.Type.DATE
-  });
-  var grater8formattedEndDate = format.format({
-      value: graterThen4To7endDate,
-      type: format.Type.DATE
-  });
-
-  log.debug('Start Date grater then 4 to 7 months:', grater4To7formattedStartDate);
-  log.debug('End Date grater then  4 to 7  months:', grater8formattedEndDate);
 
               // Map month abbreviations to their corresponding fields
               var monthFieldMap = {
@@ -766,8 +826,45 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                      });
                      log.debug('number of delers billed this month : ',noOfDelBilledMonth)
   
+
+                          //lessthen 3 month  form the selcted month 
+                          var less3count={};
+
+                   var invoiceSearchObj = search.create({
+                    type: "invoice",
+                    settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
+                    filters:
+                    [
+                       ["type","anyof","CustInvc"], 
+                       "AND", 
+                       ["salesrep.salesrep","is","T"], 
+                       "AND", 
+                       ["mainline","is","T"], 
+                       "AND", 
+                       ["trandate","within",less3formattedStartDate,less3formattedEndDate], 
+                       "AND", 
+                       ["salesrep","anyof",salesRepIds]
+                    ],
+                    columns:
+                    [
+                       search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                       search.createColumn({name: "entity",summary: "COUNT",label: "Name"})
+                    ]
+                 });
+                 var searchResultCount = invoiceSearchObj.runPaged().count;
+                 log.debug("invoiceSearchObj result count",searchResultCount);
+                 invoiceSearchObj.run().each(function(result){
+                  var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                  var lessthe3 = parseFloat(result.getValue({ name: "entity", summary: "COUNT" })) || 0;
+
+                  log.debug('result', result);
+                  less3count[salesRepId] = lessthe3;
+                  return true;
+                 });
+                 log.debug('less3count',less3count)
    
-                     //grater then 8 months 
+                     //greater then 4 = 7 month 
+                     var graterThen4 ={};
                      var invoiceSearchObj = search.create({
                       type: "invoice",
                       settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
@@ -777,33 +874,67 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                          "AND", 
                          ["salesrep.salesrep","is","T"], 
                          "AND", 
-                         ["salesrep","anyof","653","655"], 
+                         ["salesrep","anyof",salesRepIds], 
                          "AND", 
                          ["mainline","is","T"], 
                          "AND", 
-                         ["trandate","within","29/10/2024","22/11/2024"]
+                         ["trandate","within",grater4To7formattedStartDate,grater4To7formattedEndDate]
                       ],
                       columns:
                       [
-                         search.createColumn({
-                            name: "salesrep",
-                            summary: "GROUP",
-                            label: "Sales Rep"
-                         }),
-                         search.createColumn({
-                            name: "entity",
-                            summary: "COUNT",
-                            label: "Name"
-                         })
+                         search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                         search.createColumn({name: "entity",summary: "COUNT",label: "Name"})
                       ]
                    });
                    var searchResultCount = invoiceSearchObj.runPaged().count;
                    log.debug("invoiceSearchObj result count",searchResultCount);
                    invoiceSearchObj.run().each(function(result){
-                      // .run().each has a limit of 4,000 results
-                      return true;
+                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                    var grater4To7 = parseFloat(result.getValue({ name: "entity", summary: "COUNT" })) || 0;
+  
+                    log.debug('result', result);
+                    graterThen4[salesRepId] = grater4To7;
+                    return true;
                    });
+                   log.debug('graterThen4',graterThen4)
 
+
+                    //greater then  8 month 
+                    var graterThen8 ={};
+                    var invoiceSearchObj = search.create({
+                     type: "invoice",
+                     settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
+                     filters:
+                     [
+                        ["type","anyof","CustInvc"], 
+                        "AND", 
+                        ["salesrep.salesrep","is","T"], 
+                        "AND", 
+                        ["salesrep","anyof",salesRepIds], 
+                        "AND", 
+                        ["mainline","is","T"], 
+                        "AND", 
+                        ["trandate","within",grater8formattedStartDate,grater8formattedEndDate]
+                     ],
+                     columns:
+                     [
+                        search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                        search.createColumn({name: "entity",summary: "COUNT",label: "Name"})
+                     ]
+                  });
+                  var searchResultCount = invoiceSearchObj.runPaged().count;
+                  log.debug("invoiceSearchObj result count",searchResultCount);
+                  invoiceSearchObj.run().each(function(result){
+                   var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                   var grater8 = parseFloat(result.getValue({ name: "entity", summary: "COUNT" })) || 0;
+ 
+                   log.debug('result', result);
+                   graterThen8[salesRepId] = grater8;
+                   return true;
+                  });
+                  log.debug('graterThen8',graterThen8)
+
+              
 
               function roundToTwoDecimals(value) {
                   return Math.round(value * 100) / 100;
@@ -863,6 +994,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               var closerTotal =0;
               var totalNumberOfDealersTotal = 0;
               var noOFDealerTotal =0;
+              var less_total =0;
+              var grater_4_To_7_Total = 0;
+              var grater_8_Total =0;
 
               for (var i = 0; i < internalIds.length; i++) {
                   //first table sales
@@ -994,6 +1128,14 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
            var noOfDealerBilled = parseFloat(noOfDelBilledMonth[salesRepId]) || 0;
            noOFDealerTotal += noOfDealerBilled;
            
+           var less_then_3 = parseFloat(less3count[salesRepId]) || 0;
+           less_total += less_then_3;
+
+           var grater_then_4_to_7 = parseFloat(graterThen4[salesRepId]) || 0;
+           grater_4_To_7_Total += grater_then_4_to_7;
+
+           var grater_then_8 = parseFloat(graterThen8[salesRepId]) || 0;
+           grater_8_Total += grater_then_8;
           td3 ='<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; border-left: 1px solid black;">'+serialNumber+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+salesRepName[i]+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+customer_count+'</td>'+
@@ -1002,9 +1144,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+closer_customer+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+totalNoOfDealers+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+noOfDealerBilled+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
+          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+less_then_3+'</td>'+
+          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_4_to_7+'</td>'+
+          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_8+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; align: center;  border-bottom: 1px solid black; border-right: 1px solid black;"></td>';
 
     tr3 += '<tr style="width: 10%;height:2%;">'+ td3 +'</tr>' ;
@@ -1198,9 +1340,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+closerTotal+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+totalNumberOfDealersTotal+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+noOFDealerTotal+'</td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+less_total+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+grater_4_To_7_Total+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+grater_8_Total+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-bottom: 1px solid black; font-weight: bold; border-right: 1px solid black;"></td>\
             </tr>\
           </table>\
