@@ -119,6 +119,137 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
           log.debug('Start Date of the Fiscal Month April:', formattedFiscalStartDate);
           log.debug('End Date Month of the Selected Month Before Month:', formattedFicalEndDate);
 
+          //dearler addition and deletion start and end date
+var dealerSMI = monthMap[monthName];// Assuming fiscal year starts in March (zero-based index: 2) (SMI selected Month index)
+var DealerFiscalStartMonth = 2; // March
+var dealerFiscalEndMonth = 2;   // Also March (fixed period)
+
+// Determine fiscal year logic based on selected month
+var dealerFiscalYearStart;
+var dealerFiscalYearEnd;
+
+if (dealerSMI < DealerFiscalStartMonth) {
+    dealerFiscalYearStart = year - 3; // Fiscal year starts two years before for months before March
+    dealerFiscalYearEnd = year - 1;   // Fiscal year ends one year before
+} else {
+    dealerFiscalYearStart = year - 2; // Fiscal year starts one year before for months March and after
+    dealerFiscalYearEnd = year;       // Fiscal year ends in the current year
+}
+
+// Calculate the fiscal start and end dates
+var dealerFiscalStartDate = new Date(dealerFiscalYearStart, DealerFiscalStartMonth, 1); // March 1st of fiscal start year
+var dealerFiscalEndDate = new Date(dealerFiscalYearEnd, dealerFiscalEndMonth + 1, 0);  // March 31st of fiscal end year
+
+// Format the dates
+var formattedFiscalStartDate = format.format({
+    value: dealerFiscalStartDate,
+    type: format.Type.DATE
+});
+var formattedFiscalEndDate = format.format({
+    value: dealerFiscalEndDate,
+    type: format.Type.DATE
+});
+
+// Log the results
+log.debug('dealer Addition And Deletion Year Start Date:', formattedFiscalStartDate);
+log.debug('dealer Addition And Deletion Year End Date:', formattedFiscalEndDate);
+
+//for added new customer in april to current month
+var addedCustSMI = monthMap[monthName];// Assuming fiscal year starts in March (zero-based index: 2) (SMI selected Month index)
+var addedFiscalStartMonth = 3; // March
+var addedFiscalEndMonth = monthNumber;   // Also March (fixed period)
+
+// Determine fiscal year logic based on selected month
+var addedFiscalYearStart;
+var addedFiscalYearEnd;
+
+if (addedCustSMI < addedFiscalStartMonth) {
+    addedFiscalYearStart = year - 1; // Fiscal year starts two years before for months before March
+    addedFiscalYearEnd = year; // Fiscal year ends one year before
+} else {
+    addedFiscalYearStart = year; // Fiscal year starts one year before for months March and after
+    addedFiscalYearEnd = year;       // Fiscal year ends in the current year
+}
+
+// Calculate the fiscal start and end dates
+var addedFiscalStartDate = new Date(addedFiscalYearStart, addedFiscalStartMonth, 1); // March 1st of fiscal start year
+var addedFiscalEndDate = new Date(addedFiscalYearEnd, addedFiscalEndMonth + 1, 0);  // March 31st of fiscal end year
+
+// Format the dates
+var addformattedFiscalStartDate = format.format({
+    value: addedFiscalStartDate,
+    type: format.Type.DATE
+});
+var addformattedFiscalEndDate = format.format({
+    value: addedFiscalEndDate,
+    type: format.Type.DATE
+});
+
+
+// Log the results
+log.debug('dealer Addition And Deletion Year Start Date:', addformattedFiscalStartDate);
+log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDate);
+// purchase count >= 8 months a year
+//here  actually count the 1 year base like jan - dec month. if current month nov mean dec - nov
+  // Adjust for previous month
+  var prevMonthsOfYear = monthNumber - 3;
+  var prevYear = year;
+
+  // If the month goes below 0, wrap around to December of the previous year
+  if (prevMonthsOfYear < 0) {
+      prevMonthsOfYear += 12; // Wrap back to the range [0-11]
+      prevYear -= 1;   // Adjust the year
+      }
+  // Calculate the start and end dates for the previous month
+  var graterThen8startDate = new Date(prevYear, prevMonthsOfYear, 1);
+  log.debug("Start Date grater then 8 months", graterThen8startDate);
+
+  var graterThen8endDate = new Date(prevYear, monthNumber + 1, 0);
+  log.debug("End Date grater then 8 months", graterThen8endDate);
+
+  // Format the dates
+  var grater8formattedStartDate = format.format({
+      value: graterThen8startDate,
+      type: format.Type.DATE
+  });
+  var grater8formattedEndDate = format.format({
+      value: graterThen8endDate,
+      type: format.Type.DATE
+  });
+
+  log.debug('Start Date grater then 8 months:', grater8formattedStartDate);
+  log.debug('End Date grater then 8 months:', grater8formattedEndDate);
+
+
+  //>= 4 to 7 month customer count
+  var prev4To7MonthsOfYear = monthNumber - 7;
+  var prev4To7Year = year;
+
+  // If the month goes below 0, wrap around to December of the previous year
+  if (prev4To7MonthsOfYear < 0) {
+      prev4To7MonthsOfYear += 12; // Wrap back to the range [0-11]
+      prev4To7Year -= 1;   // Adjust the year
+      }
+  // Calculate the start and end dates for the previous month
+  var graterThen4To7startDate = new Date(prev4To7Year, prevMonthsOfYear, 1);
+  log.debug("Start Date grater then 8 months", graterThen4To7startDate);
+
+  var graterThen4To7endDate = new Date(prev4To7Year, prevMonthsOfYear - 1, 0);
+  log.debug("End Date grater then 8 months", graterThen4To7endDate);
+
+  // Format the dates
+  var grater4To7formattedStartDate = format.format({
+      value: graterThen4To7startDate,
+      type: format.Type.DATE
+  });
+  var grater8formattedEndDate = format.format({
+      value: graterThen4To7endDate,
+      type: format.Type.DATE
+  });
+
+  log.debug('Start Date grater then 4 to 7 months:', grater4To7formattedStartDate);
+  log.debug('End Date grater then  4 to 7  months:', grater8formattedEndDate);
+
               // Map month abbreviations to their corresponding fields
               var monthFieldMap = {
                   'Jan': 'custrec ord_wbt_salesman_field_jan',
@@ -494,7 +625,6 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
 
                     //dealer addition and deletion 
-
                     var custCount = {};
                     var invoiceSearchObj = search.create({
                       type: "invoice",
@@ -505,9 +635,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                          "AND", 
                          ["salesrep.salesrep","is","T"], 
                          "AND", 
-                         ["salesrep","anyof","653","655"], 
+                         ["salesrep","anyof",salesRepIds], 
                          "AND", 
-                         ["customer.datecreated","onorbefore","22/11/2024 11:59 pm"], 
+                         ["customer.datecreated","within",formattedFiscalStartDate,formattedFiscalEndDate], 
                          "AND", 
                          ["mainline","is","T"]
                       ],
@@ -529,14 +659,155 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                    });
                    log.debug('custCount',custCount)
 
+                 
 
+                      //dealer addition and deletion 
+                      var addedCount = {};
+                      var invoiceSearchObj = search.create({
+                        type: "invoice",
+                        settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
+                        filters:
+                        [
+                           ["type","anyof","CustInvc"], 
+                           "AND", 
+                           ["salesrep.salesrep","is","T"], 
+                           "AND", 
+                           ["salesrep","anyof",salesRepIds], 
+                           "AND", 
+                           ["customer.datecreated","within",addformattedFiscalStartDate,addformattedFiscalEndDate], 
+                           "AND", 
+                           ["mainline","is","T"]
+                        ],
+                        columns:
+                        [
+                           search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                           search.createColumn({name: "entity",summary: "COUNT",label: "Name"})
+                        ]
+                     });
+                     var searchResultCount = invoiceSearchObj.runPaged().count;
+                     log.debug("invoiceSearchObj result count",searchResultCount);
+                     invoiceSearchObj.run().each(function(result){
+                      var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                      var addedCustomerCount = parseFloat(result.getValue({ name: "entity", summary: "COUNT" })) || 0;
+  
+                      log.debug('result', result);
+                      addedCount[salesRepId] = addedCustomerCount;
+                      return true;
+                     });
+                     log.debug('addedCount',addedCount)
+  
+                     // date of closer deleted customer
+                     var closerCount ={};
+                     var invoiceSearchObj = search.create({
+                      type: "invoice",
+                      settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
+                      filters:
+                      [
+                         ["type","anyof","CustInvc"], 
+                         "AND", 
+                         ["salesrep.salesrep","is","T"], 
+                         "AND", 
+                         ["salesrep","anyof",salesRepIds], 
+                         "AND", 
+                         ["mainline","is","T"], 
+                         "AND", 
+                         ["customer.custentity_impal_dat_of_clo","within",addformattedFiscalStartDate,addformattedFiscalEndDate]
+                      ],
+                      columns:
+                      [
+                         search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                         search.createColumn({name: "entity",summary: "COUNT",label: "Name"})
+                      ]
+                   });
+                   var searchResultCount = invoiceSearchObj.runPaged().count;
+                   log.debug("invoiceSearchObj result count",searchResultCount);
+                   invoiceSearchObj.run().each(function(result){
+                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                      var closerCustomer = parseFloat(result.getValue({ name: "entity", summary: "COUNT" })) || 0;
+  
+                      log.debug('result', result);
+                      closerCount[salesRepId] = closerCustomer;
+                      return true;
+                     });
+                     log.debug('date of closer ',closerCount)
+  
+                     // Number of dealers billed this month 
+                     var noOfDelBilledMonth ={};
+                     var invoiceSearchObj = search.create({
+                      type: "invoice",
+                      settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
+                      filters:
+                      [
+                         ["type","anyof","CustInvc"], 
+                         "AND", 
+                         ["salesrep.salesrep","is","T"], 
+                         "AND", 
+                         ["salesrep","anyof",salesRepIds], 
+                         "AND", 
+                         ["mainline","is","T"],
+                         "AND", 
+                         ["trandate","within",formattedStartDate,formattedEndDate]
+                      ],
+                      columns:
+                      [
+                         search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
+                         search.createColumn({name: "entity",summary: "COUNT",label: "Name"})
+                      ]
+                   });
+                   var searchResultCount = invoiceSearchObj.runPaged().count;
+                   log.debug("invoiceSearchObj result count",searchResultCount);
+                   invoiceSearchObj.run().each(function(result){
+                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+                      var numOfDealerBilledMonth = parseFloat(result.getValue({ name: "entity", summary: "COUNT" })) || 0;
+  
+                      log.debug('result', result);
+                      noOfDelBilledMonth[salesRepId] = numOfDealerBilledMonth;
+                      return true;
+                     });
+                     log.debug('number of delers billed this month : ',noOfDelBilledMonth)
+  
    
+                     //grater then 8 months 
+                     var invoiceSearchObj = search.create({
+                      type: "invoice",
+                      settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
+                      filters:
+                      [
+                         ["type","anyof","CustInvc"], 
+                         "AND", 
+                         ["salesrep.salesrep","is","T"], 
+                         "AND", 
+                         ["salesrep","anyof","653","655"], 
+                         "AND", 
+                         ["mainline","is","T"], 
+                         "AND", 
+                         ["trandate","within","29/10/2024","22/11/2024"]
+                      ],
+                      columns:
+                      [
+                         search.createColumn({
+                            name: "salesrep",
+                            summary: "GROUP",
+                            label: "Sales Rep"
+                         }),
+                         search.createColumn({
+                            name: "entity",
+                            summary: "COUNT",
+                            label: "Name"
+                         })
+                      ]
+                   });
+                   var searchResultCount = invoiceSearchObj.runPaged().count;
+                   log.debug("invoiceSearchObj result count",searchResultCount);
+                   invoiceSearchObj.run().each(function(result){
+                      // .run().each has a limit of 4,000 results
+                      return true;
+                   });
+
+
               function roundToTwoDecimals(value) {
                   return Math.round(value * 100) / 100;
                   }
-              // var workingDayForMOn = 26;
-              // var completedWorkDay = 1;
-              // var balance_For_day = 25;
 
               var avgDay =0;
               var avgDayTotal=0;
@@ -588,6 +859,10 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
               //dealers addition and deletion 
               var custCountTotal =0;
               var targetForTheFy24to25Total =0;
+              var addedCustTotal =0;
+              var closerTotal =0;
+              var totalNumberOfDealersTotal = 0;
+              var noOFDealerTotal =0;
 
               for (var i = 0; i < internalIds.length; i++) {
                   //first table sales
@@ -649,17 +924,17 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                         }
     
 
-                    td = '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + serialNumber + '</td>' +
-                    '<td align ="left" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">' + salesRepName[i] + '</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal; background-color: rgb(239, 239, 238);">'+forTheMonth+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+avgDay+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+currentTargetTillDay+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+sales_target_for+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;  background-color: rgb(137, 211, 127)">'+today_AmountForRep+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;  background-color: rgb(137, 211, 127)">' + cum_AmountForRep + '</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+sales_plus_minus+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+salesVstarget+'%'+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal; vertical-align: middle; letter-spacing: normal;">'+cum_amt_total+'%'+'</td>';
+                    td = '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">' + serialNumber + '</td>' +
+                    '<td align ="left" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">' + salesRepName[i] + '</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle; background-color: rgb(239, 239, 238);">'+forTheMonth+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+avgDay+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+currentTargetTillDay+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+sales_target_for+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;  background-color: rgb(137, 211, 127)">'+today_AmountForRep+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;  background-color: rgb(137, 211, 127)">' + cum_AmountForRep + '</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+sales_plus_minus+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+salesVstarget+'%'+'</td>' +
+                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+cum_amt_total+'%'+'</td>';
            
          tr += '<tr>' + td + '</tr>';  
          
@@ -698,14 +973,35 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 
           var targetForTheFy24to25 = customer_count*1.2;
           targetForTheFy24to25Total += targetForTheFy24to25;
+
+          var addedCust = parseFloat(addedCount[salesRepId]) || 0;
+          addedCustTotal += addedCust;
+
+          // Check if closerCount[salesRepId] is undefined or invalid
+          var closer_customer = closerCount[salesRepId];
+
+          if (closer_customer === undefined || isNaN(parseFloat(closer_customer))) {
+              closer_customer = '';  // Set to empty string if undefined or invalid
+          } else {
+              closer_customer = parseFloat(closer_customer);  // Convert to number if it's valid
+          }        
+              closerTotal += closer_customer;
+          
+
+           var totalNoOfDealers = Math.abs(customer_count + addedCust - closer_customer);
+           totalNumberOfDealersTotal += totalNoOfDealers;
+
+           var noOfDealerBilled = parseFloat(noOfDelBilledMonth[salesRepId]) || 0;
+           noOFDealerTotal += noOfDealerBilled;
+           
           td3 ='<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; border-left: 1px solid black;">'+serialNumber+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+salesRepName[i]+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+customer_count+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+Math.round(targetForTheFy24to25)+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
+          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+addedCust+'</td>'+
+          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+closer_customer+'</td>'+
+          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+totalNoOfDealers+'</td>'+
+          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+noOfDealerBilled+'</td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
           '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; "></td>'+
@@ -729,87 +1025,87 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
 <!-- First Table -->\
       <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 15px; ">\
         <tr border-bottom="1"  style="background-color: white;width: 10%;height:2%;">\
-          <td border-right="1" style=" width: 15px;height:10px; padding: 4px;color:black; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\WBT 4.2</td>\
-           <td border-right="1" colspan="8" style=" width:15px;height:10px;background-color: red; color: white; padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\WHITE BOARD TRACKER</td>\
-           <td  style="width: 15px;height:10px;background-color: #4CAF50; color: black;padding: 4px; font-weight: bold; font-style: normal; letter-spacing: normal;align: center; vertical-align: middle;">'+monthNames+'</td>\
+          <td border-right="1" style=" width: 15px;height:10px; padding: 4px;color:black; font-weight: bold;  align: center; vertical-align: middle;">\WBT 4.2</td>\
+           <td border-right="1" colspan="8" style=" width:15px;height:10px;background-color: red; color: white; padding: 4px; font-weight: bold;  align: center; vertical-align: middle;">\WHITE BOARD TRACKER</td>\
+           <td  style="width: 15px;height:10px;background-color: #4CAF50; color: black;padding: 4px; font-weight: bold; align: center; vertical-align: middle;">'+monthNames+'</td>\
         </tr>\
         <tr border="1" border-top="none" style="border-bottom:none;color:black;width: 10%;height:2%;">\
-          <td border-right="1"  border-top="none" style="  width: 15px;height:10px; padding: 4px;  font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle; background-color: #f2f2f2; ">'+monthNames+'</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ; font-weight: bold; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">BRANCH NAME</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  background-color:white ; background-color:white ; background-color:white ; font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">\Working days for month</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: #f2f2f2;">'+workingDayForMOn+'</td>\
-          <td border-right="1" border-top="none"  style="  width: 15px;height:10px;  padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Standup meeting working day</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color: #4CAF50;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle; ">'+standupWorkingDay+'</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Completed working days</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;   background-color: #4CAF50;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">'+completedWorkDay+'</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal; font-style: normal; letter-spacing: normal; align: center; vertical-align: middle;">Balance days for month</td>\
-          <td border-top="none"  style="width: 15px;height:10px; padding: 4px;  background-color:white ;align: center; font-weight: normal; font-style: normal; letter-spacing: normal; vertical-align: middle;">'+balance_For_day+'</td>\
+          <td border-right="1"  border-top="none" style="  width: 15px;height:10px; padding: 4px;  font-weight: normal;  align: center; vertical-align: middle; background-color: #f2f2f2; ">'+monthNames+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ; font-weight: bold;  align: center; vertical-align: middle;">BRANCH NAME</td>\
+          <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  background-color:white ; background-color:white ; background-color:white ; font-weight: normal;  align: center; vertical-align: middle;">\Working days for month</td>\
+          <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  align: center; font-weight: normal;  vertical-align: middle; background-color: #f2f2f2;">'+workingDayForMOn+'</td>\
+          <td border-right="1" border-top="none"  style="  width: 15px;height:10px;  padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Standup meeting working day</td>\
+          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color: #4CAF50;align: center; font-weight: normal;  vertical-align: middle; ">'+standupWorkingDay+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Completed working days</td>\
+          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;   background-color: #4CAF50;align: center; font-weight: normal;  vertical-align: middle;">'+completedWorkDay+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Balance days for month</td>\
+          <td border-top="none"  style="width: 15px;height:10px; padding: 4px;  background-color:white ;align: center; font-weight: normal;  vertical-align: middle;">'+balance_For_day+'</td>\
         </tr>\
       </table>\
 <!-- Second Table -->\
 <table style="width: 100%; border-collapse: collapse;">\
 <!-- Header Row -->\
 <tr style="background-color: #4CAF50; color: white;">\
-  <td colspan="11" style="align:center;border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Sales</td>\
+  <td colspan="11" style="align:center;border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Sales</td>\
 </tr>\
 <!-- Sub-header Rows -->\
 <tr style="background-color: #f9f9f9;">\
-  <td rowspan="2" style="border: 1px solid black;background-color: #f2f2f2; padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(255, 238, 192);">SI.No</td>\
-  <td rowspan="2" style="border: 1px solid black; background-color: #f2f2f2;padding: 4px; font-weight: bold; font-style: normal; text-align: center; vertical-align: middle; letter-spacing: normal; background-color: rgb(255, 238, 192);">Sales<br/>Executive M/s</td>\
-  <td align ="center" colspan="4" style="border: 1px solid black; padding: 4px;color: white; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;background-color: rgb(255, 9, 17)">Target Lacs</td>\
-  <td align ="center"  colspan="3" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal; color: white;  background-color: rgb(108, 102, 218)">Sales Lacs</td>\
-  <td align ="center" colspan="3" style="border: 1px solid black; padding: 4px;  font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal; color: white;  background-color: rgb(108, 102, 218)">Cum % of Sales</td>\
+  <td rowspan="2" style="border: 1px solid black;background-color: #f2f2f2; padding: 4px; font-weight: bold;  text-align: center; vertical-align: middle; background-color: rgb(255, 238, 192);">SI.No</td>\
+  <td rowspan="2" style="border: 1px solid black; background-color: #f2f2f2;padding: 4px; font-weight: bold;  text-align: center; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales<br/>Executive M/s</td>\
+  <td align ="center" colspan="4" style="border: 1px solid black; padding: 4px;color: white; font-weight: bold;  vertical-align: middle;background-color: rgb(255, 9, 17)">Target Lacs</td>\
+  <td align ="center"  colspan="3" style="border: 1px solid black; padding: 4px; font-weight: bold;  vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Sales Lacs</td>\
+  <td align ="center" colspan="3" style="border: 1px solid black; padding: 4px;  font-weight: bold;  vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Cum % of Sales</td>\
 </tr>\
 <tr style="background-color: #f2f2f2;">\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">For the Month</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Avg/Day</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cum Target till Date-(Avg/Day)</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales<br/>Target for</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales for the Day</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cumulative<br/>sales as of</td>\
-  <td style="border: 1px solid black; padding:4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Cumulative Plus/Minus</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales vs Target</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; font-style: normal; letter-spacing: normal; vertical-align: middle; background-color: rgb(255, 238, 192);">Cus Salesmen Share</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">For the Month</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Avg/Day</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cum Target till Date-(Avg/Day)</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales<br/>Target for</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales for the Day</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cumulative<br/>sales as of</td>\
+  <td style="border: 1px solid black; padding:4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Cumulative Plus/Minus</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales vs Target</td>\
+  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cus Salesmen Share</td>\
 </tr>\
 <!-- Rows with Date Values -->\
 <!-- items map -->\
  '+tr+'\
   <!-- total map -->\
     <tr>\
-  <td  style="border: 1px solid black; padding: 4px; font-weight: normal; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">\</td>\
-  <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Total</td>\
-    <td align = "center" style="border: 1px solid black; padding:4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+monthTotal+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+avgDayTotal+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+currTarDayTotal+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_sales_target_for+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+todayCalAmount+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+cumMonTotalAmount+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_Sales_Plus_Minus+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; font-style: normal;text-align: center; vertical-align: middle; letter-spacing: normal;">'+total_cum_amt_percentage+'%'+'</td>\
+  <td  style="border: 1px solid black; padding: 4px; font-weight: normal; text-align: center; vertical-align: middle;">\</td>\
+  <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold;  align: center; vertical-align: middle;">\Total</td>\
+    <td align = "center" style="border: 1px solid black; padding:4px; font-weight: bold; text-align: center; vertical-align: middle;">'+monthTotal+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+avgDayTotal+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+currTarDayTotal+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+total_sales_target_for+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+todayCalAmount+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+cumMonTotalAmount+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+total_Sales_Plus_Minus+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
+    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+total_cum_amt_percentage+'%'+'</td>\
 </tr>\
 </table>\
 <table  style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; top:1%;">\
       <tr style="width: 10%;height:2%;">\
-        <td  border="1" border-right="1" colspan="3" style="width: 15px;height:10px;font-weight: bold; background-color: red; color: white;  padding: 8px;align: center;  font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">NEW DEALERS` SALES - TARGET 6% OF SALES</td>\
+        <td  border="1" border-right="1" colspan="3" style="width: 15px;height:10px;font-weight: bold; background-color: red; color: white;  padding: 8px;align: center;  font-weight: bold; vertical-align: middle;">NEW DEALERS` SALES - TARGET 6% OF SALES</td>\
       </tr>\
       <tr >\
         <td  style="width: 50%;">\
           <table border="1" style="width: 100%; border-collapse: collapse; margin-top:-2%; font-family: Arial, sans-serif; font-size: 12px;">\
             <tr style="width: 10%;height:2%;">\
-              <td border-bottom="1" colspan="4" style="width: 15px;height:10px;background-color: rgb(108, 102, 218); color: white;  padding: 8px;align: center;font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">NEW DEALERS` SALES REPORT - Lacs for this month</td>\
+              <td border-bottom="1" colspan="4" style="width: 15px;height:10px;background-color: rgb(108, 102, 218); color: white;  padding: 8px;align: center;font-weight: bold; vertical-align: middle;">NEW DEALERS` SALES REPORT - Lacs for this month</td>\
             </tr >\
             <tr style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
-              <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">Target 6% of sales for the day</td>\
-              <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">New Dealers` Sales for the day</td>\
-              <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal;vertical-align: middle; letter-spacing: normal;">Cumulative New Dealer Sales</td>\
-              <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; vertical-align: middle; letter-spacing: normal;">% sales<br/>achieved Vs target</td>\
+              <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  vertical-align: middle;">Target 6% of sales for the day</td>\
+              <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold; vertical-align: middle;">New Dealers` Sales for the day</td>\
+              <td border-bottom="1" border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold; vertical-align: middle;">Cumulative New Dealer Sales</td>\
+              <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  vertical-align: middle;">% sales<br/>achieved Vs target</td>\
             </tr>\
             <tr style="width: 10%;height:2%;">\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(targetFor6Percent)+'</td>\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(newDealersTotalForDay)+'</td>\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(cumNewDealerTotal)+'</td>\
-              <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">'+roundToTwoDecimals(perDealerAchievedVsTarget)+'%'+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(targetFor6Percent)+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(newDealersTotalForDay)+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(cumNewDealerTotal)+'</td>\
+              <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(perDealerAchievedVsTarget)+'%'+'</td>\
             </tr>\
           </table>\
         </td>\
@@ -817,13 +1113,13 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
         <td style="width: 50%;">\
           <table border="1" style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">\
             <tr style="background-color: rgb(108, 102, 218); color: white;width: 10%;height:2%;">\
-              <td border-bottom="1" colspan="4" style="width: 15px;height:10px;color: white; font-weight: bold; padding: 8px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">\CUM. NEW DEALERS` SALES REPORT - Lacs for this month (till this month)</td>\
+              <td border-bottom="1" colspan="4" style="width: 15px;height:10px;color: white; font-weight: bold; padding: 8px;align: center;font-weight: bold; align: center; vertical-align: middle;">\CUM. NEW DEALERS` SALES REPORT - Lacs for this month (till this month)</td>\
             </tr>\
             <tr style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
-              <td border-right="1"  style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">Cum.Branch Sales till last month</td>\
-              <td  border-right="1"   style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">New Dealers` Sales Target</td>\
-              <td  border-right="1"   style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">New Dealer Sales</td>\
-              <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; font-style: normal;align: center; vertical-align: middle; letter-spacing: normal;">% sales<br/>achieved Vs target</td>\
+              <td border-right="1"  style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; align: center; vertical-align: middle;">Cum.Branch Sales till last month</td>\
+              <td  border-right="1"   style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; align: center; vertical-align: middle;">New Dealers` Sales Target</td>\
+              <td  border-right="1"   style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; align: center; vertical-align: middle;">New Dealer Sales</td>\
+              <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; align: center; vertical-align: middle;">% sales<br/>achieved Vs target</td>\
             </tr>\
             <tr style="width: 10%;height:2%;">\
               <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">'+fiscalCumTotal+'</td>\
@@ -838,19 +1134,19 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
        <!-- last table -->\
         <table border="1"  style="width: 60%; margin-top:20px;border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; ">\
             <tr style="width: 10%;height:2%;">\
-              <td border-bottom="1" colspan="6" style="width: 15px;height:10px;background-color: rgb(108, 102, 218); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">NEW PRODUCT SALES  REPORT  ₹ Lacs</td>\
+              <td border-bottom="1" colspan="6" style="width: 15px;height:10px;background-color: rgb(108, 102, 218); color: white; font-weight: bold; padding: 8px; font-weight: bold;  align: center; vertical-align: middle;">NEW PRODUCT SALES  REPORT &#x20b9; Lacs</td>\
             </tr>\
            <tr>\
-              <td colspan="6" style="width: 15px;height:10px;font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\
+              <td colspan="6" style="width: 15px;height:10px;font-weight: bold; padding: 8px; font-weight: bold;  align: center; vertical-align: middle;">\
               </td>\
             </tr>\
             <tr border-top="1" style="background-color: rgb(255, 238, 192);width: 10%;height:2%;">\
-              <td border-right="1"  border-bottom="1"  style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sl No</td>\
-              <td border-right="1"  border-bottom="1"  style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sales<br/>Executive M/s</td>\
-              <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Target 15% of sales </td>\
-              <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Sales for the day</td>\
-              <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\Cumulative sales</td>\
-              <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal;">\% sales achived Vs target</td>\
+              <td border-right="1"  border-bottom="1"  style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; vertical-align: middle;">\Sl No</td>\
+              <td border-right="1"  border-bottom="1"  style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; vertical-align: middle;">\Sales<br/>Executive M/s</td>\
+              <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; vertical-align: middle;">\Target 15% of sales </td>\
+              <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; vertical-align: middle;">\Sales for the day</td>\
+              <td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; vertical-align: middle;">\Cumulative sales</td>\
+              <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; vertical-align: middle;">\% sales achived Vs target</td>\
             </tr>\
            '+tr2+'\
             <tr style="width: 10%;height:2%;">\
@@ -862,35 +1158,35 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
               <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+totalPerSales.toFixed(2)+'</td>\
             </tr>\
           </table>\
-          <table   style="width: 100%; margin-top:20px; font-family: Arial, sans-serif; font-size: 11px; ">\
+          <table  style="width: 100%; margin-top:20px; font-family: Arial, sans-serif; font-size: 11px; ">\
             <tr style="width: 10%;height:2%; border: none;">\
-                <td  colspan="8" style="width: 15px;height:10px; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;"></td>\
-                <td  colspan="4" style="width: 15px;height:10px; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-bottom: 1px solid black; border-top:1px solid black; border-right: 1px solid black;">Data updated every quarter for previous 12 months</td>\
+                <td  colspan="8" style="width: 15px;height:10px; font-weight: bold; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black; border-bottom: 1px solid black;"></td>\
+                <td  colspan="4" style="width: 15px;height:10px; font-weight: bold; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-bottom: 1px solid black; border-top:1px solid black; border-right: 1px solid black;">Data updated every quarter for previous 12 months</td>\
               </tr>\
             <tr style="height:2%;">\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black; border-left: 1px solid black;"></td>\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;"></td>\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;"></td>\
-              <td colspan="3"   border-bottom="1" style="width: 7px; height:10px;background-color: rgb(108, 102, 218); color: white; font-weight: bold; padding: 8px; align: center; font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;">DEALER	&#32;ADDITION/DELETION</td>\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;"></td>\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;"></td>\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;"></td>\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;"></td>\
-              <td style="width: 7px;height:10px;background-color: rgb(255, 238, 192); color: white; font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; vertical-align: middle; letter-spacing: normal; border-right: 1px solid black;"></td>\
-              <td rowspan ="2" style="width: 7px;height:10px;background-color: rgb(255, 238, 192);  font-weight: bold; padding: 8px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-bottom: 1px solid black; border-right: 1px solid black; ">% of Frequent dealers billed to total dealers salesman wise -objective 60% or more </td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black; border-left: 1px solid black;"></td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;"></td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;"></td>\
+              <td colspan="3"   border-bottom="1" style="width: 7px; height:10px; background-color: rgb(108, 102, 218); color: white; padding: 8px; align: center; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;">DEALER	&#32;ADDITION/DELETION</td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;"></td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;"></td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;"></td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;"></td>\
+              <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;"></td>\
+              <td rowspan ="2" style="width: 7px;height:10px; background-color: rgb(255, 238, 192);  padding: 8px; font-weight: bold;  align: center; border-bottom: 1px solid black; border-right: 1px solid black; ">% of Frequent dealers billed to total dealers salesman wise -objective 60% or more </td>\
             </tr>\
             <tr style="background-color: rgb(255, 238, 192); width: 10%; height:2%;">\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black;">Sl No</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Sales Executive M/s</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Existing no  of<br/>Dealers  end<br/>March &apos; 24 </td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Target for the<br/>FY 24-25 (20% for the entire year)</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Added till date<br/>this FY 24-25</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Deleted till date this FY 24-25</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Total no of<br/>dealers  as<br/>of date </td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Number of Dealers <br/>billed this month<br/>till Date</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Frequent dealercount purchase &gt;<br/>= 8 months  a year</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black;">Periodic dealer<br/>count<br/>purchase >= 4 to 7 months a year</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center;font-weight: bold; font-style: normal; align: center; letter-spacing: normal; border-right: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black;">Occasional dealer count Purchase &lt;=3 months a year</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black;">Sl No</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Sales Executive M/s</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Existing no  of<br/>Dealers  end<br/>March &apos; 24 </td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Target for the<br/>FY 24-25 (20% for the entire year)</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Added till date<br/>this FY 24-25</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Deleted till date this FY 24-25</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Total no of<br/>dealers  as<br/>of date </td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Number of Dealers <br/>billed this month<br/>till Date</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Frequent dealercount purchase &gt;<br/>= 8 months  a year</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">Periodic dealer<br/>count<br/>purchase >= 4 to 7 months a year</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black;">Occasional dealer count Purchase &lt;=3 months a year</td>\
            </tr>\
            '+tr3+'\
             <tr style="width: 10%;height:2%;">\
@@ -898,10 +1194,10 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">Total</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+custCountTotal+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+Math.round(targetForTheFy24to25Total)+'</td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+addedCustTotal+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+closerTotal+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+totalNumberOfDealersTotal+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+noOFDealerTotal+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;"></td>\
