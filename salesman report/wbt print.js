@@ -974,6 +974,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               var td2 = '';
               var tr3 = '';
               var td3 = '';
+              var td4 = '';
+              var tr4 = '';
 
               var serialNumber = 1;
 
@@ -1071,9 +1073,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                     '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+salesVstarget+'%'+'</td>' +
                     '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+cum_amt_total+'%'+'</td>';
            
-         tr += '<tr>' + td + '</tr>';  
-         
-        
+         tr += '<tr>' + td + '</tr>';       
          
          target_15_0f_sales = forTheMonth*0.15;
          target_15_total += target_15_0f_sales;
@@ -1141,19 +1141,42 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
            var tot_deal_Sm_Wise = totalNoOfDealers === 0 ? 0 : grater_then_8 / totalNoOfDealers; // total dealer sales man wise
            sm_Wise_Total += tot_deal_Sm_Wise;
           td3 ='<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; border-left: 1px solid black;">'+serialNumber+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+salesRepName[i]+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+customer_count+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+Math.round(targetForTheFy24to25)+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+addedCust+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+closer_customer+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+totalNoOfDealers+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+noOfDealerBilled+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_8+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_4_to_7+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+less_then_3+'</td>'+
-          '<td  style="width: 15px;height:10px;  padding: 6px; align: center;  border-bottom: 1px solid black; border-right: 1px solid black;">'+tot_deal_Sm_Wise+'</td>';
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+salesRepName[i]+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+customer_count+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+Math.round(targetForTheFy24to25)+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; background-color: rgb(137, 211, 127) ">'+addedCust+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; background-color: rgb(137, 211, 127) ">'+closer_customer+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+totalNoOfDealers+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center;  background-color: rgb(137, 211, 127)">'+noOfDealerBilled+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_8+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_4_to_7+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+less_then_3+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; align: center;  border-bottom: 1px solid black; border-right: 1px solid black;">'+tot_deal_Sm_Wise+'</td>';
 
-    tr3 += '<tr style="width: 10%;height:2%;">'+ td3 +'</tr>' ;
+       tr3 += '<tr style="width: 10%;height:2%;">'+ td3 +'</tr>' ;
+
+       td4 = '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; border-left: 1px solid black;">' + serialNumber + '</td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">' + salesRepName[i] + '</td>' +
+       (serialNumber === 1 
+        ? '<td rowspan="' + salesRepName.length + '" style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; vertical-align: middle;  background-color: rgb(249, 201, 125);;">Do not enter data here</td>'
+        : '') + // Add rowspan only for the first row
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
+       (serialNumber === 1 
+        ? '<td rowspan="' + salesRepName.length + '" style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; vertical-align: middle;  background-color: rgb(249, 201, 125);;">Do not enter data here</td>'
+        : '') + // Add rowspan only for the first row
+       (serialNumber === 1 
+        ? '<td rowspan="' + salesRepName.length + '" style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; vertical-align: middle;  background-color: rgb(249, 201, 125);;">Do not enter data here</td>'
+        : '') + // Add rowspan only for the first row
+       (serialNumber === 1 
+        ? '<td rowspan="' + salesRepName.length + '" style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; vertical-align: middle;  background-color: rgb(249, 201, 125);;">Do not enter data here</td>'
+        : '') ; // Add rowspan only for the first row;
+ 
+   
+      tr4 += '<tr>'+ td4 + '</tr>'
          serialNumber++;
       
           }
@@ -1171,7 +1194,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 <!-- First Table -->\
       <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 15px; ">\
         <tr border-bottom="1"  style="background-color: white;width: 10%;height:2%;">\
-          <td border-right="1" style=" width: 15px;height:10px; padding: 4px;color:black; font-weight: bold;  align: center; vertical-align: middle;">\WBT 4.2</td>\
+          <td border-right="1" style=" width: 15px;height:10px; padding: 4px;color:black; font-weight: bold;  align: center; vertical-align: middle;">WBT 4.2</td>\
            <td border-right="1" colspan="8" style=" width:15px;height:10px;background-color: red; color: white; padding: 4px; font-weight: bold;  align: center; vertical-align: middle;">\WHITE BOARD TRACKER</td>\
            <td  style="width: 15px;height:10px;background-color: #4CAF50; color: black;padding: 4px; font-weight: bold; align: center; vertical-align: middle;">'+monthNames+'</td>\
         </tr>\
@@ -1350,6 +1373,49 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-bottom: 1px solid black; font-weight: bold; border-right: 1px solid black;">'+sm_Wise_Total+'</td>\
             </tr>\
           </table>\
+           <table  style="width: 100%; margin-top:150px ; font-family: Arial, sans-serif; font-size: 11px; ">\
+        <tr style="width: 10%;height:2%; border: none;">\
+            <td  colspan="9" style="width: 15px;height:10px; font-weight: bold; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; border-top: 1px solid black; background-color: rgb(108, 102, 218); color: white; ">\ SURPLUS STOCK LIQUIDATION ₹ Lacs ( more than 6 months)</td>\
+            <td  colspan="2" style="width: 15px;height:10px; background-color: rgb(252, 82, 82); color: white;font-weight: bold; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-bottom: 1px solid black; border-top:1px solid black; border-right: 1px solid black;">\Surplus to total stock ratio</td>\
+          </tr>\
+        <tr height="0.2%">\
+          <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-left: 1px solid black;border-right:1px solid black; ">\</td>\
+          <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle;border-right:1px solid black;">\</td>\
+          <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-right: 1px solid black;">\</td>\
+          <td colspan="2"   border-bottom="1" style="width: 7px; height:10px;background-color: rgb(255, 238, 192); padding: 8px; align: center; font-weight: bold;  align: center; vertical-align: middle; border-bottom:1px solid black; border-right: 1px solid black;">\ Target</td>\
+          <td colspan="3"  style="width: 7px;height:10px; background-color: rgb(255, 238, 192);padding: 8px; font-weight: bold;  align: center; vertical-align: middle; border-bottom:1px solid black;border-bottom:1px solid black; border-right:1px solid black;">\ Liquidation status</td>\
+          <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle;border-right:1px solid black;">\</td>\
+          <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192); color: white; padding: 8px; font-weight: bold;  align: center; vertical-align: middle;border-right:1px solid black;">\</td>\
+          <td style="width: 7px;height:10px; background-color: rgb(255, 238, 192);  padding: 8px; font-weight: bold;  align: center; border-right: 1px solid black; ">\</td>\
+        </tr>\
+        <tr style="background-color: rgb(255, 238, 192); width: 10%; height:2%;">\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black;">\Sl No</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\Sales Executive M/s</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\ Opening Surplus Stock for the day </td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\ For the Month</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\ For a day </td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\ Day</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\ Cumulative</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\%</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black;">\ Closing surplus Stock for the day</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black;">\ Total stock in the branch as of date</td>\
+          <td style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black;">\Surplus to total stock ratio</td>\
+       </tr>\
+       '+tr4+'\
+       <tr style="width: 10%;height:2%;">\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\Total</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-bottom: 1px solid black; font-weight: bold; border-right: 1px solid black;"></td>\
+        </tr>\
+      </table>\
 </body>\
 </pdf>';
 // Create and configure the renderer
