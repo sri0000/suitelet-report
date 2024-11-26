@@ -360,6 +360,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                 var completedWorkDay =0;
                 var standupWorkingDay = 0;
                 var balance_For_day =0;
+                var surplus_stock =0;
                 for (var m = 0; m < internalIds.length; m++) {
                     var src_rec1 = record.load({
                         type: 'customrecord_impal_wbt_salesman',
@@ -373,7 +374,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                     workingDayForMOn = parseFloat(src_rec1.getValue("custrecord_working_days_for_month") )|| 0;  
                     completedWorkDay = parseFloat(src_rec1.getValue("custrecordsales_completed_working_days") )|| 0;  
                     standupWorkingDay = parseFloat(src_rec1.getValue("custrecord_standup_meeting_working_day_") )|| 0;  
-                    balance_For_day = parseFloat(src_rec1.getValue("custrecord_balance_days_for_month_") )|| 0;                    
+                    balance_For_day = parseFloat(src_rec1.getValue("custrecord_balance_days_for_month_") )|| 0;  
+                    surplus_stock = parseFloat(src_rec1.getValue("custrecord_surplus_stock_") )|| 0;
                   
                   
                   
@@ -1001,6 +1003,10 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               var grater_8_Total =0;
               var sm_Wise_Total =0;
 
+              //surplus stock 
+              var surplus_Total =0;
+              var for_The_Day_Total =0;
+
               for (var i = 0; i < internalIds.length; i++) {
                   //first table sales
                   forTheMonth =monthtotalArray[i]
@@ -1048,8 +1054,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                     salesVstarget = roundToTwoDecimals(cum_AmountForRep/forTheMonth) ||0;
                     totalSalesVstarget += salesVstarget;
 
-                  
-
+                
                         //2table e24 calculation
                         percentSalesVsTarget = avgDayTotal*completedWorkDay*6;
                         //2nd table sales vs target
@@ -1153,6 +1158,13 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+less_then_3+'</td>'+
                '<td  style="width: 15px;height:10px;  padding: 6px; align: center;  border-bottom: 1px solid black; border-right: 1px solid black;">'+tot_deal_Sm_Wise+'</td>';
 
+
+               var surplus = surplus_stock;
+               surplus_Total += surplus;
+
+               var for_The_Day =(workingDayForMOn !== 0) ? (surplus/workingDayForMOn) : 0;
+               for_The_Day_Total += for_The_Day;
+
        tr3 += '<tr style="width: 10%;height:2%;">'+ td3 +'</tr>' ;
 
        td4 = '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; border-left: 1px solid black;">' + serialNumber + '</td>' +
@@ -1160,8 +1172,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
        (serialNumber === 1 
         ? '<td rowspan="' + salesRepName.length + '" style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; vertical-align: middle;  background-color: rgb(249, 201, 125);;">Do not enter data here</td>'
         : '') + // Add rowspan only for the first row
-       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
-       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; ">'+surplus+'</td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; ">'+for_The_Day+'</td>' +
        '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
        '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
        '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
@@ -1406,8 +1418,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
           <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black;">\</td>\
           <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\Total</td>\
           <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
-          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
-          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+surplus_Total+'</td>\
+          <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+for_The_Day_Total+'</td>\
           <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
           <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
           <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">\</td>\
