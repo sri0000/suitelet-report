@@ -184,8 +184,6 @@ var addformattedFiscalEndDate = format.format({
     value: addedFiscalEndDate,
     type: format.Type.DATE
 });
-
-
 // Log the results
 log.debug('dealer Addition And Deletion Year Start Date:', addformattedFiscalStartDate);
 log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDate);
@@ -212,7 +210,6 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
   // Calculate the start and end dates for the previous month
   var lessThen3startDate = new Date(prevYear, prevMonthsOfYear, 1);
   // log.debug("Start Date less then <3 months", lessThen3startDate);
-
   var lessThen3endDate = new Date(less_3_EndYear, monthNumber + 1, 0);
   // log.debug("End Date less then <3 months", lessThen3endDate);
 
@@ -225,7 +222,6 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
       value: lessThen3endDate,
       type: format.Type.DATE
   });
-
   log.debug('Start Date less then <3 months:', less3formattedStartDate);
   log.debug('End Date less then <3 months:', less3formattedEndDate);
 
@@ -334,7 +330,14 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                   type: format.Type.DATE
               });
               log.debug('today',today)
-              
+
+                  //for tofixed
+                  function formatNumber(value, decimals) {
+                    decimals = decimals === undefined ? 2 : decimals;  // Set a default of 2 if decimals is not provided
+                    var numberValue = Number(value);
+                    return isNaN(numberValue) ? 0 : numberValue.toFixed(decimals);
+                }
+          
               var internalIds = [];
               var source = search.create({
                   type: "customrecord_impal_wbt_salesman",
@@ -375,9 +378,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                     completedWorkDay = parseFloat(src_rec1.getValue("custrecordsales_completed_working_days") )|| 0;  
                     standupWorkingDay = parseFloat(src_rec1.getValue("custrecord_standup_meeting_working_day_") )|| 0;  
                     balance_For_day = parseFloat(src_rec1.getValue("custrecord_balance_days_for_month_") )|| 0;  
-                    surplus_stock = parseFloat(src_rec1.getValue("custrecord_surplus_stock_") )|| 0;
-                  
-                  
+                    surplus_stock = parseFloat(src_rec1.getValue("custrecord_surplus_stock_") )|| 0;               
                   
                 }
                 
@@ -386,10 +387,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                 log.debug('Sales Rep Names Array:', salesRepName); // Logs the full array of sales rep names
                 log.debug('Sales Rep workingDayForMOn:', workingDayForMOn);
                 log.debug('Sales Rep completedWorkDay:', completedWorkDay);
-
                 log.debug('Sales Rep standupWorkingDay:', standupWorkingDay);
                 log.debug('Sales Rep balance_For_day:', balance_For_day);
-
 
 
                 if
@@ -418,12 +417,13 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
               var today_SalesRep_Amounts = {}; // Object to store sales rep ID and their amount
               var today_SalesRepName = {};   // Object to store sales rep ID and their names
-
               var invoiceSearchObj = search.create({
               type: "invoice",
               settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
               filters: [
               ["type", "anyof", "CustInvc"],
+              "AND", 
+              ["mainline","is","T"], 
               "AND",
               ["salesrep", "anyof", salesRepIds],
               "AND",
@@ -431,15 +431,14 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               ],
               columns: [
               search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep ID" }),
-              search.createColumn({ name: "entityid", join: "salesrep", summary: "GROUP", label: "Sales Rep Name" }),
-              search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
+              search.createColumn({name: "formulacurrency",summary: "SUM", formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                label: "Formula (Currency)"})
                   ]
               });
 
               invoiceSearchObj.run().each(function(result) {
               var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-              var salesRepName = result.getValue({ name: "entityid", join: "salesrep", summary: "GROUP" });
-              var totalAmountForRep = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 0;
+              var totalAmountForRep = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"})) || 0;
 
               // Store the sales rep's name and amount in respective objects
               today_SalesRepName[salesRepId] = salesRepName;
@@ -450,23 +449,24 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
               log.debug("Sales Rep today amount", today_SalesRep_Amounts);
 
-
               //cum sales for the sales rep
               var salesRepAmounts = {};// Object to map sales rep ID to amount
-
               var invoiceSearchObj = search.create({
                   type: "invoice",
                   settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
                   filters: [
                       ["type", "anyof", "CustInvc"],
+                      "AND", 
+                      ["mainline","is","T"], 
                       "AND",
                       ["salesrep", "anyof", salesRepIds],
                       "AND",
                       ["trandate", "within", formattedStartDate, formattedEndDate]
                      ],
                       columns: [
-                      search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                      search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
+                      search.createColumn({name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                      search.createColumn({name: "formulacurrency",summary: "SUM", formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                           label: "Formula (Currency)"})
                   ]
               });
               
@@ -476,13 +476,12 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               // Run the search and populate salesRepAmounts
               invoiceSearchObj.run().each(function(result) {
                   var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                  var totalAmountForRep = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 0;
+                  var totalAmountForRep = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"})) || 0;
                 
               
                   // Store the amount for the corresponding sales rep ID
                   salesRepAmounts[salesRepId] = totalAmountForRep;
               
-
                   return true;
               });
               
@@ -495,6 +494,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                    settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
                    filters: [
                        ["type", "anyof", "CustInvc"],
+                       "AND", 
+                      ["mainline","is","T"], 
                        "AND",
                        ["salesrep", "anyof", salesRepIds],
                        "AND",
@@ -503,8 +504,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                        ["customer.custentity_customer_date_creations_", "is", "T"]
                    ],
                    columns: [
-                       search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                      search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
+                       search.createColumn({name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                       search.createColumn({name: "formulacurrency",summary: "SUM", formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                            label: "Formula (Currency)"})           
                    ]
                });
 
@@ -514,12 +516,10 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                // Run the search and populate newDelDateCreationsalesAmounts
                invoiceSearchObj.run().each(function(result) {
               var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-              var totalAmountForRep = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 0;
- 
+              var totalAmountForRep = parseFloat(result.getValue({ name: "formulacurrency", summary: "SUM" })) || 0;
 
               // Store the amount for the corresponding sales rep ID
               newDelDateCreationsalesAmounts[salesRepId] = totalAmountForRep;
-
 
                    return true;
                });
@@ -530,10 +530,12 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                  // sales for the month for new dealers
                  var cumNewDealersAmount = {};
                  var invoiceSearchObj = search.create({
-                                     type: "invoice",
+                     type: "invoice",
                      settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
                      filters: [
                          ["type", "anyof", "CustInvc"],
+                         "AND", 
+                         ["mainline","is","T"], 
                          "AND",
                          ["salesrep", "anyof", salesRepIds],
                          "AND",
@@ -543,8 +545,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                          ],
                      columns: [
                          search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                        search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
-                     ]
+                         search.createColumn({name: "formulacurrency",summary: "SUM", formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                             label: "Formula (Currency)"})          
+                    ]
                  });
  
                  var searchResultCount = invoiceSearchObj.runPaged().count;
@@ -553,16 +556,13 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                  // Run the search and populate cumNewDealersAmount
                  invoiceSearchObj.run().each(function(result) {
                 var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                var totalAmountForRep = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 0;
+                var totalAmountForRep = parseFloat(result.getValue({ name: "formulacurrency", summary: "SUM" })) || 0;
    
- 
                 // Store the amount for the corresponding sales rep ID
                 cumNewDealersAmount[salesRepId] = totalAmountForRep;
- 
 
                      return true;
                  });
- 
                  log.debug("Sales Rep Amounts", cumNewDealersAmount); // Logs amounts for each sales rep ID
 
                    // sales for the fical period start and end month for new dealers
@@ -572,6 +572,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                        settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
                        filters: [
                            ["type", "anyof", "CustInvc"],
+                           "AND", 
+                           ["mainline","is","T"],
                            "AND",
                            ["salesrep", "anyof", salesRepIds],
                            "AND",
@@ -581,36 +583,34 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                            ],
                        columns: [
                            search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                           search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
-                       ]
+                           search.createColumn({name: "formulacurrency",summary: "SUM", formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                            label: "Formula (Currency)"})                            ]
                    });
    
                    var searchResultCount = invoiceSearchObj.runPaged().count;
                    log.debug("invoiceSearchObj result count", searchResultCount);
-   
-                   // Run the search and populate cumFiscalNewDealersAmount
+                  // Run the search and populate cumFiscalNewDealersAmount
                    invoiceSearchObj.run().each(function(result) {
                   var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                  var totalAmountForRep = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 0;
+                  var totalAmountForRep = parseFloat(result.getValue({ name: "formulacurrency", summary: "SUM" })) || 0;
      
-   
                   // Store the amount for the corresponding sales rep ID
                   cumFiscalNewDealersAmount[salesRepId] = totalAmountForRep;
    
-  
                        return true;
                    });
-   
                    log.debug("fiscal month Sales Rep Amounts", cumFiscalNewDealersAmount); // Logs amounts for each sales rep ID
 
                  //search for the new product find the sales for the day
-                    // sales for the day for new dealers
+                // sales for the day for new dealers
                var newProdect = {};
                var invoiceSearchObj = search.create({
                    type: "invoice",
                    settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
                    filters: [
                        ["type", "anyof", "CustInvc"],
+                       "AND", 
+                       ["mainline","is","T"],
                        "AND",
                        ["salesrep", "anyof", salesRepIds],
                        "AND",
@@ -619,9 +619,10 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                        ["item.custitem_impal_new_product", "is", "T"]
                       ],
                    columns: [
-                       search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
-                      search.createColumn({name: "debitfxamount",summary: "SUM",label: "Amount (Debit) (Foreign Currency)"})
-                   ]
+                       search.createColumn({name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+                       search.createColumn({name: "formulacurrency",summary: "SUM", formula: "CASE      WHEN {taxtotal} IS NULL THEN {totalamount}     ELSE {totalamount} - {taxtotal} END",
+                                            label: "Formula (Currency)"})           
+                       ]
                });
 
                var searchResultCount = invoiceSearchObj.runPaged().count;
@@ -630,26 +631,26 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                // Run the search and populate newProdect
                invoiceSearchObj.run().each(function(result) {
               var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-              var totalAmountForRep = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 0;
+              var totalAmountForRep = parseFloat(result.getValue({ name: "formulacurrency", summary: "SUM" })) || 0;
  
-
               // Store the amount for the corresponding sales rep ID
               newProdect[salesRepId] = totalAmountForRep;
-
 
                    return true;
                });
 
                log.debug("Sales Rep Amounts", newProdect); // Logs amounts for each sales rep ID
 
-                  //search for the new product find the sales for the day
-                    // sales for the day for new dealers
+                     //search for the new product find the sales for the month
+                    // sales for the month for new dealers
                     var cum_newProdect = {};
                     var invoiceSearchObj = search.create({
                         type: "invoice",
                         settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
                         filters: [
                             ["type", "anyof", "CustInvc"],
+                            "AND", 
+                            ["mainline","is","T"],
                             "AND",
                             ["salesrep", "anyof", salesRepIds],
                             "AND",
@@ -671,9 +672,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                     log.debug("invoiceSearchObj result count", searchResultCount);
     
                     // Run the search and populate cum_newProdect
-                    invoiceSearchObj.run().each(function(result) {
+                   invoiceSearchObj.run().each(function(result) {
                    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
-                   var totalAmountForRep = parseFloat(result.getValue({ name: "debitfxamount", summary: "SUM" })) || 0;
+                   var totalAmountForRep = parseFloat(result.getValue({ name: "formulacurrency", summary: "SUM" })) || 0;
     
                    log.debug('result', result)
                    // Store the amount for the corresponding sales rep ID
@@ -681,10 +682,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
                         return true;
                     });
-    
                     log.debug("Sales Rep Amounts", cum_newProdect); // Logs amounts for each sales rep ID
-
-
 
                     //dealer addition and deletion 
                     var custCount = {};
@@ -720,8 +718,6 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                     return true;
                    });
                    log.debug('custCount',custCount)
-
-                 
 
                       //dealer addition and deletion 
                       var addedCount = {};
@@ -828,10 +824,8 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                      });
                      log.debug('number of delers billed this month : ',noOfDelBilledMonth)
   
-
-                          //lessthen 3 month  form the selcted month 
-                          var less3count={};
-
+                   //lessthen 3 month  form the selcted month 
+                   var less3count={};
                    var invoiceSearchObj = search.create({
                     type: "invoice",
                     settings:[{"name":"consolidationtype","value":"ACCTTYPE"}],
@@ -900,7 +894,6 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                    });
                    log.debug('graterThen4',graterThen4)
 
-
                     //greater then  8 month 
                     var graterThen8 ={};
                     var invoiceSearchObj = search.create({
@@ -934,13 +927,105 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                    graterThen8[salesRepId] = grater8;
                    return true;
                   });
-                  log.debug('graterThen8',graterThen8)
+                  log.debug('graterThen8',graterThen8);
 
-              
+                  //<=3,>=4 to7,>=8 purchase customer count 
 
-              function roundToTwoDecimals(value) {
-                  return Math.round(value * 100) / 100;
-                  }
+                  var datecount = {};
+var group1 = {}; // Sales Reps with count <= 3
+var group2 = {}; // Sales Reps with count 4 to 7
+var group3 = {}; // Sales Reps with count >= 8
+
+var internalIds = ["653", "655"]; // Example list of SalesRep IDs
+
+// Create and run the search
+var invoiceSearchObj = search.create({
+    type: "invoice",
+    settings: [{ "name": "consolidationtype", "value": "ACCTTYPE" }],
+    filters: [
+        ["type", "anyof", "CustInvc"],
+        "AND",
+        ["salesrep.salesrep", "is", "T"],
+        "AND",
+        ["mainline", "is", "T"],
+        "AND",
+        ["trandate", "within", "01/12/2023", "30/11/2024"],
+        "AND",
+        ["salesrep", "anyof", internalIds]
+    ],
+    columns: [
+        search.createColumn({ name: "salesrep", summary: "GROUP", label: "Sales Rep" }),
+        search.createColumn({ name: "entity", summary: "GROUP", label: "Name" }),
+        search.createColumn({ name: "formulatext", summary: "COUNT", formula: "TO_CHAR({trandate}, 'YYYY-MM')", label: "Formula (Text)" })
+    ]
+});
+
+var searchResultCount = invoiceSearchObj.runPaged().count;
+log.debug("invoiceSearchObj result count", searchResultCount);
+
+invoiceSearchObj.run().each(function (result) {
+    var salesRepId = result.getValue({ name: "salesrep", summary: "GROUP" });
+    var countValue = result.getValue({ name: "formulatext", summary: "COUNT" });
+
+    // Ensure the salesRepId has its own array in datecount
+    if (!datecount[salesRepId]) {
+        datecount[salesRepId] = [];
+    }
+
+    // Push the countValue to the corresponding salesRepId's array
+    datecount[salesRepId].push(countValue);
+    return true;
+});
+
+// Categorize the results into groups
+for (var salesRepId in datecount) {
+    if (datecount.hasOwnProperty(salesRepId)) {
+        var countArray = datecount[salesRepId];
+
+        var group1Values = [];
+        var group2Values = [];
+        var group3Values = [];
+
+        countArray.forEach(function (value) {
+            var count = parseInt(value, 10); // Ensure value is treated as a number
+            if (!isNaN(count)) {
+                if (count >= 1 && count <= 3) {
+                    group1Values.push(value);
+                } else if (count >= 4 && count <= 7) {
+                    group2Values.push(value);
+                } else if (count >= 8) {
+                    group3Values.push(value);
+                }
+            }
+        });
+
+        if (group1Values.length > 0) {
+            group1[salesRepId] = group1Values;
+        }
+        if (group2Values.length > 0) {
+            group2[salesRepId] = group2Values;
+        }
+        if (group3Values.length > 0) {
+            group3[salesRepId] = group3Values;
+        }
+    }
+}
+
+log.debug('Group 1 (<=3)', group1);
+log.debug('Group 2 (4-7)', group2);
+log.debug('Group 3 (>=8)', group3);
+
+// Iterate over `internalIds` to get the total counts
+var totalGroup1Count = 0;
+var totalGroup2Count = 0;
+var totalGroup3Count = 0;
+
+var Cust_Group_Total_1 = 0;
+var Cust_Group_Total_2 = 0;
+var Cust_Group_Total_3 = 0;
+
+
+
 
               var avgDay =0;
               var avgDayTotal=0;
@@ -981,7 +1066,6 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
               var serialNumber = 1;
 
-
               var forTheMonth=0;
               //total amount for first tablesales rep
               var monthTotal = 0;
@@ -989,7 +1073,6 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               var cumMonTotalAmount = 0;
               var cum_amt_total =0;
               var total_cum_amt_percentage =0;
-              
 
               //dealers addition and deletion 
               var custCountTotal =0;
@@ -1021,7 +1104,6 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
 
                   //second table sales
-
                    fiscalCumSalesAmount= parseFloat(cumFiscalNewDealersAmount[salesRepId]) || 0;
                    fiscalCumTotal +=fiscalCumSalesAmount;
                    newDealersSalesTarget = fiscalCumTotal*6;
@@ -1034,24 +1116,24 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                    var cumNewDealers = parseFloat(cumNewDealersAmount[salesRepId]) || 0;
                    cumNewDealerTotal += cumNewDealers; 
 
-                  cum_amt_total = cum_AmountForRep ? roundToTwoDecimals(cum_AmountForRep / cumMonTotalAmount) : 0;
-                  total_cum_amt_percentage += roundToTwoDecimals(cum_amt_total);
+                  cum_amt_total = cum_AmountForRep ? (cum_AmountForRep / cumMonTotalAmount) : 0;
+                  total_cum_amt_percentage += (cum_amt_total);
 
                 
                    //calculation part variables
-                    avgDay=roundToTwoDecimals(forTheMonth/workingDayForMOn)||0;
-                    avgDayTotal += roundToTwoDecimals(avgDay);
+                    avgDay=(forTheMonth/workingDayForMOn)||0;
+                    avgDayTotal += (avgDay);
 
-                    currentTargetTillDay =  roundToTwoDecimals(avgDay*completedWorkDay)||0;
-                    currTarDayTotal +=roundToTwoDecimals(currentTargetTillDay);
+                    currentTargetTillDay =  (avgDay*completedWorkDay)||0;
+                    currTarDayTotal +=(currentTargetTillDay);
                   
-                    sales_target_for = roundToTwoDecimals(Math.abs(forTheMonth-cum_AmountForRep)/balance_For_day)||0;
-                    total_sales_target_for +=roundToTwoDecimals(sales_target_for);
+                    sales_target_for = (Math.abs(forTheMonth-cum_AmountForRep)/balance_For_day)||0;
+                    total_sales_target_for +=(sales_target_for);
                     
-                    sales_plus_minus = roundToTwoDecimals(Math.abs(cum_AmountForRep - currentTargetTillDay));
-                    total_Sales_Plus_Minus += roundToTwoDecimals(sales_plus_minus);
+                    sales_plus_minus = (Math.abs(cum_AmountForRep - currentTargetTillDay));
+                    total_Sales_Plus_Minus += (sales_plus_minus);
                   
-                    salesVstarget = roundToTwoDecimals(cum_AmountForRep/forTheMonth) ||0;
+                    salesVstarget = (cum_AmountForRep/forTheMonth) ||0;
                     totalSalesVstarget += salesVstarget;
 
                 
@@ -1066,17 +1148,17 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
                         }
     
 
-                    td = '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">' + serialNumber + '</td>' +
-                    '<td align ="left" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">' + salesRepName[i] + '</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle; background-color: rgb(239, 239, 238);">'+forTheMonth+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+avgDay+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+currentTargetTillDay+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+sales_target_for+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;  background-color: rgb(137, 211, 127)">'+today_AmountForRep+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;  background-color: rgb(137, 211, 127)">' + cum_AmountForRep + '</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+sales_plus_minus+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+salesVstarget+'%'+'</td>' +
-                    '<td align ="center" style="border: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+cum_amt_total+'%'+'</td>';
+                    td = '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">' + serialNumber + '</td>' +
+                    '<td align ="left"   style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">' + salesRepName[i] + '</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle; background-color: rgb(239, 239, 238);">'+formatNumber(forTheMonth)+'</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+formatNumber(avgDay)+'</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+formatNumber(currentTargetTillDay)+'</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+formatNumber(sales_target_for)+'</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle; background-color: rgb(137, 211, 127);">'+formatNumber(today_AmountForRep)+'</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle; background-color: rgb(137, 211, 127);">' + formatNumber(cum_AmountForRep) + '</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+formatNumber(sales_plus_minus)+'</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+formatNumber(salesVstarget)+'%'+'</td>' +
+                    '<td align ="center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: normal;  vertical-align: middle;">'+formatNumber(cum_amt_total)+'%'+'</td>';
            
          tr += '<tr>' + td + '</tr>';       
          
@@ -1100,11 +1182,11 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
            // new product sales report
            td2 =  '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+serialNumber+'</td>' +
-           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+salesRepName[i]+'</td>'+
-           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(target_15_0f_sales)+'</td>'+
-           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(newProductSalesForDay)+'</td>'+
-           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(cum_newProductMonth)+'</td>'+
-           '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+roundToTwoDecimals(perSalesAchivedvsTarget)+'</td>';
+           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; ">'+salesRepName[i]+'</td>'+
+           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+formatNumber(target_15_0f_sales)+'</td>'+
+           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center; background-color: rgb(137, 211, 127)">'+formatNumber(newProductSalesForDay)+'</td>'+
+           '<td border-right="1"  border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center; background-color: rgb(137, 211, 127)">'+formatNumber(cum_newProductMonth)+'</td>'+
+           '<td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; align: center;">'+formatNumber(perSalesAchivedvsTarget)+'</td>';
 
            tr2 += '<tr style="width: 10%;height:2%;">'+ td2 + '</tr>';
 
@@ -1126,7 +1208,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               closer_customer = parseFloat(closer_customer);  // Convert to number if it's valid
           }        
               closerTotal += closer_customer;
-          
+
 
            var totalNoOfDealers = Math.abs(customer_count + addedCust - closer_customer);
            totalNumberOfDealersTotal += totalNoOfDealers;
@@ -1134,30 +1216,48 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
            var noOfDealerBilled = parseFloat(noOfDelBilledMonth[salesRepId]) || 0;
            noOFDealerTotal += noOfDealerBilled;
            
-           var less_then_3 = parseFloat(less3count[salesRepId]) || 0;
-           less_total += less_then_3;
+          //  var less_then_3 = parseFloat(less3count[salesRepId]) || 0;
+          //  less_total += less_then_3;
 
-           var grater_then_4_to_7 = parseFloat(graterThen4[salesRepId]) || 0;
-           grater_4_To_7_Total += grater_then_4_to_7;
+          //  var grater_then_4_to_7 = parseFloat(graterThen4[salesRepId]) || 0;
+          //  grater_4_To_7_Total += grater_then_4_to_7;
 
-           var grater_then_8 = parseFloat(graterThen8[salesRepId]) || 0;
-           grater_8_Total += grater_then_8;
+          //  var grater_then_8 = parseFloat(graterThen8[salesRepId]) || 0;
+          //  grater_8_Total += grater_then_8;
 
-           var tot_deal_Sm_Wise = totalNoOfDealers === 0 ? 0 : grater_then_8 / totalNoOfDealers; // total dealer sales man wise
+             // Group 1: Check and count, fallback to 0 if undefined
+    var group1Count = group1[salesRepId] && Array.isArray(group1[salesRepId]) ? group1[salesRepId].length : 0;
+    totalGroup1Count += group1Count;
+    // Cust_Group_Total_1 += totalGroup1Count;
+    log.debug('Group 1 Count for SalesRepId: ' + salesRepId, group1Count);
+
+    // Group 2: Check and count, fallback to 0 if undefined
+    var group2Count = group2[salesRepId] && Array.isArray(group2[salesRepId]) ? group2[salesRepId].length : 0;
+    totalGroup2Count += group2Count;
+    // Cust_Group_Total_2 += totalGroup2Count;
+    log.debug('Group 2 Count for SalesRepId: ' + salesRepId, group2Count);
+
+    // Group 3: Check and count, fallback to 0 if undefined
+    var group3Count = group3[salesRepId] && Array.isArray(group3[salesRepId]) ? group3[salesRepId].length : 0;
+    totalGroup3Count += group3Count;
+    // Cust_Group_Total_3 += totalGroup3Count;
+    log.debug('Group 3 Count for SalesRepId: ' + salesRepId, group3Count);
+
+
+           var tot_deal_Sm_Wise = totalNoOfDealers === 0 ? 0 : group3Count / totalNoOfDealers; // total dealer sales man wise
            sm_Wise_Total += tot_deal_Sm_Wise;
           td3 ='<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; border-left: 1px solid black;">'+serialNumber+'</td>'+
-               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+salesRepName[i]+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black;  ">'+salesRepName[i]+'</td>'+
                '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+customer_count+'</td>'+
                '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+Math.round(targetForTheFy24to25)+'</td>'+
-               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; background-color: rgb(137, 211, 127) ">'+addedCust+'</td>'+
-               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; background-color: rgb(137, 211, 127) ">'+closer_customer+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; background-color: rgb(137, 211, 127); ">'+addedCust+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; background-color: rgb(137, 211, 127); ">'+closer_customer+'</td>'+
                '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+totalNoOfDealers+'</td>'+
-               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center;  background-color: rgb(137, 211, 127)">'+noOfDealerBilled+'</td>'+
-               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_8+'</td>'+
-               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+grater_then_4_to_7+'</td>'+
-               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+less_then_3+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center;  background-color: rgb(137, 211, 127);">'+noOfDealerBilled+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+group3Count+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+group2Count+'</td>'+
+               '<td  style="width: 15px;height:10px;  padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black; align: center; ">'+group1Count+'</td>'+
                '<td  style="width: 15px;height:10px;  padding: 6px; align: center;  border-bottom: 1px solid black; border-right: 1px solid black;">'+tot_deal_Sm_Wise+'</td>';
-
 
                var surplus = surplus_stock;
                surplus_Total += surplus;
@@ -1167,15 +1267,15 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 
        tr3 += '<tr style="width: 10%;height:2%;">'+ td3 +'</tr>' ;
 
-       td4 = '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; border-left: 1px solid black;">' + serialNumber + '</td>' +
-       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">' + salesRepName[i] + '</td>' +
+       td4 = '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black;">' + serialNumber + '</td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black;">' + salesRepName[i] + '</td>' +
        (serialNumber === 1 
         ? '<td rowspan="' + salesRepName.length + '" style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; vertical-align: middle;  background-color: rgb(249, 201, 125);;">Do not enter data here</td>'
         : '') + // Add rowspan only for the first row
-       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; ">'+surplus+'</td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; background-color: rgb(137, 211, 127);">'+surplus+'</td>' +
        '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; ">'+for_The_Day+'</td>' +
-       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
-       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; background-color: rgb(137, 211, 127);"></td>' +
+       '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; background-color: rgb(137, 211, 127);"></td>' +
        '<td style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; "></td>' +
        (serialNumber === 1 
         ? '<td rowspan="' + salesRepName.length + '" style="width: 15px;height:10px; padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold; vertical-align: middle;  background-color: rgb(249, 201, 125);;">Do not enter data here</td>'
@@ -1197,7 +1297,7 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
           log.debug('newDealersTotalForDay',newDealersTotalForDay)
 
       }
-              var xmlTemplateFile= '<?xml version="1.0"?>\
+              var xmlTemplateFile= '<?xml version="1.0" encoding="UTF-8"?>\
 <!DOCTYPE pdf PUBLIC "-//big.faceless.org//report" "report-1.1.dtd">\
 <pdf>\
 <head>\
@@ -1208,19 +1308,19 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
         <tr border-bottom="1"  style="background-color: white;width: 10%;height:2%;">\
           <td border-right="1" style=" width: 15px;height:10px; padding: 4px;color:black; font-weight: bold;  align: center; vertical-align: middle;">WBT 4.2</td>\
            <td border-right="1" colspan="8" style=" width:15px;height:10px;background-color: red; color: white; padding: 4px; font-weight: bold;  align: center; vertical-align: middle;">\WHITE BOARD TRACKER</td>\
-           <td  style="width: 15px;height:10px;background-color: #4CAF50; color: black;padding: 4px; font-weight: bold; align: center; vertical-align: middle;">'+monthNames+'</td>\
+           <td  style="width: 15px;height:10px ;background-color: rgb(137, 211, 127); color: black;padding: 4px; font-weight: bold; align: center; vertical-align: middle;">'+monthNames+'</td>\
         </tr>\
         <tr border="1" border-top="none" style="border-bottom:none;color:black;width: 10%;height:2%;">\
-          <td border-right="1"  border-top="none" style="  width: 15px;height:10px; padding: 4px;  font-weight: normal;  align: center; vertical-align: middle; background-color: #f2f2f2; ">'+monthNames+'</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ; font-weight: bold;  align: center; vertical-align: middle;">BRANCH NAME</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  background-color:white ; background-color:white ; background-color:white ; font-weight: normal;  align: center; vertical-align: middle;">\Working days for month</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px;  padding: 4px;  align: center; font-weight: normal;  vertical-align: middle; background-color: #f2f2f2;">'+workingDayForMOn+'</td>\
-          <td border-right="1" border-top="none"  style="  width: 15px;height:10px;  padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Standup meeting working day</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color: #4CAF50;align: center; font-weight: normal;  vertical-align: middle; ">'+standupWorkingDay+'</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Completed working days</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;   background-color: #4CAF50;align: center; font-weight: normal;  vertical-align: middle;">'+completedWorkDay+'</td>\
-          <td border-right="1" border-top="none" style="  width: 15px;height:10px; padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Balance days for month</td>\
-          <td border-top="none"  style="width: 15px;height:10px; padding: 4px;  background-color:white ;align: center; font-weight: normal;  vertical-align: middle;">'+balance_For_day+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  font-weight: normal;  align: center; vertical-align: middle; background-color: #f2f2f2; ">'+monthNames+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  background-color:white ; font-weight: bold;  align: center; vertical-align: middle;">BRANCH NAME</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  background-color:white ; background-color:white ; background-color:white ; font-weight: normal;  align: center; vertical-align: middle;">\Working days for month</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  align: center; font-weight: normal;  vertical-align: middle; background-color: #f2f2f2;">'+workingDayForMOn+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Standup meeting working day</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  background-color: rgb(137, 211, 127); align: center; font-weight: normal;  vertical-align: middle; ">'+standupWorkingDay+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Completed working days</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  background-color: rgb(137, 211, 127); align: center; font-weight: normal;  vertical-align: middle;">'+completedWorkDay+'</td>\
+          <td border-right="1" border-top="none" style="  width: 15px; height:10px; padding: 4px;  background-color:white ;font-weight: normal;  align: center; vertical-align: middle;">Balance days for month</td>\
+          <td border-top="none"  style="width: 15px; height:10px; padding: 4px;  background-color:white ;align: center; font-weight: normal;  vertical-align: middle;">'+balance_For_day+'</td>\
         </tr>\
       </table>\
 <!-- Second Table -->\
@@ -1231,39 +1331,39 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
 </tr>\
 <!-- Sub-header Rows -->\
 <tr style="background-color: #f9f9f9;">\
-  <td rowspan="2" style="border: 1px solid black;background-color: #f2f2f2; padding: 4px; font-weight: bold;  text-align: center; vertical-align: middle; background-color: rgb(255, 238, 192);">SI.No</td>\
-  <td rowspan="2" style="border: 1px solid black; background-color: #f2f2f2;padding: 4px; font-weight: bold;  text-align: center; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales<br/>Executive M/s</td>\
-  <td align ="center" colspan="4" style="border: 1px solid black; padding: 4px;color: white; font-weight: bold;  vertical-align: middle;background-color: rgb(255, 9, 17)">Target Lacs</td>\
-  <td align ="center"  colspan="3" style="border: 1px solid black; padding: 4px; font-weight: bold;  vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Sales Lacs</td>\
-  <td align ="center" colspan="3" style="border: 1px solid black; padding: 4px;  font-weight: bold;  vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Cum % of Sales</td>\
+  <td rowspan="2" style="border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; background-color: #f2f2f2; padding: 4px; font-weight: bold;  text-align: center; vertical-align: middle; background-color: rgb(255, 238, 192);">SI.No</td>\
+  <td rowspan="2" style="border-right: 1px solid black; border-bottom: 1px solid black; background-color: #f2f2f2;padding: 4px; font-weight: bold;  text-align: center; vertical-align: middle; background-color: rgb(255, 238, 192);">Sales<br/>Executive M/s</td>\
+  <td align ="center" colspan="4" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px;color: white; font-weight: bold;  vertical-align: middle;background-color: rgb(255, 9, 17)">Target  Lacs</td>\
+  <td align ="center"  colspan="3" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold;  vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Sales Lacs</td>\
+  <td align ="center" colspan="3" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px;  font-weight: bold;  vertical-align: middle; color: white;  background-color: rgb(108, 102, 218)">Cum % of Sales</td>\
 </tr>\
 <tr style="background-color: #f2f2f2;">\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">For the Month</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Avg/Day</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cum Target till Date-(Avg/Day)</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales<br/>Target for</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales for the Day</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cumulative<br/>sales as of</td>\
-  <td style="border: 1px solid black; padding:4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Cumulative Plus/Minus</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales vs Target</td>\
-  <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cus Salesmen Share</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">For the Month</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Avg/Day</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cum Target till Date-(Avg/Day)</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales<br/>Target for</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales for the Day</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cumulative<br/>sales as of</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales Cumulative Plus/Minus</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Sales vs Target</td>\
+  <td style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; text-align: center; font-weight: bold;  vertical-align: middle; background-color: rgb(255, 238, 192);">Cus Salesmen Share</td>\
 </tr>\
 <!-- Rows with Date Values -->\
 <!-- items map -->\
  '+tr+'\
   <!-- total map -->\
     <tr>\
-  <td  style="border: 1px solid black; padding: 4px; font-weight: normal; text-align: center; vertical-align: middle;">\</td>\
-  <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold;  align: center; vertical-align: middle;">\Total</td>\
-    <td align = "center" style="border: 1px solid black; padding:4px; font-weight: bold; text-align: center; vertical-align: middle;">'+monthTotal+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+avgDayTotal+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+currTarDayTotal+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+total_sales_target_for+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+todayCalAmount+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+cumMonTotalAmount+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+total_Sales_Plus_Minus+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+roundToTwoDecimals(totalSalesVstarget)+'%'+'</td>\
-    <td align = "center" style="border: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+total_cum_amt_percentage+'%'+'</td>\
+  <td  style="border-right: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; padding: 4px; font-weight: normal; text-align: center; vertical-align: middle;">\</td>\
+  <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold;  align: center; vertical-align: middle;">\Total</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding:4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(monthTotal)+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(avgDayTotal)+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(currTarDayTotal)+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(total_sales_target_for)+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(todayCalAmount)+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(cumMonTotalAmount)+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(total_Sales_Plus_Minus)+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(totalSalesVstarget)+'%'+'</td>\
+    <td align = "center" style="border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; font-weight: bold; text-align: center; vertical-align: middle;">'+formatNumber(total_cum_amt_percentage)+'%'+'</td>\
 </tr>\
 </table>\
 <table  style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; top:1%;">\
@@ -1283,10 +1383,10 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               <td border-bottom="1" style="width: 15px;height:10px;  padding: 6px; font-weight: bold;  vertical-align: middle;">% sales<br/>achieved Vs target</td>\
             </tr>\
             <tr style="width: 10%;height:2%;">\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(targetFor6Percent)+'</td>\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(newDealersTotalForDay)+'</td>\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(cumNewDealerTotal)+'</td>\
-              <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; align: center; vertical-align: middle;">'+roundToTwoDecimals(perDealerAchievedVsTarget)+'%'+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: normal; align: center; vertical-align: middle;">'+formatNumber(targetFor6Percent)+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; font-weight: normal; align: center; vertical-align: middle; background-color: rgb(137, 211, 127);">'+formatNumber(newDealersTotalForDay)+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; align: center; vertical-align: middle; background-color: rgb(137, 211, 127);">'+formatNumber(cumNewDealerTotal)+'</td>\
+              <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: normal; align: center; vertical-align: middle;">'+formatNumber(perDealerAchievedVsTarget)+'%'+'</td>\
             </tr>\
           </table>\
         </td>\
@@ -1303,9 +1403,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               <td style="width: 15px;height:10px;  padding: 6px;align: center;font-weight: bold; align: center; vertical-align: middle;">% sales<br/>achieved Vs target</td>\
             </tr>\
             <tr style="width: 10%;height:2%;">\
-              <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">'+fiscalCumTotal+'</td>\
-              <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">'+newDealersSalesTarget+'</td>\
-              <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">0.00</td>\
+              <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center; background-color: rgb(137, 211, 127);">'+formatNumber(fiscalCumTotal)+'</td>\
+              <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center;">'+formatNumber(newDealersSalesTarget)+'</td>\
+              <td border-right="1"  style="width: 15px;height:10px; border-top: 1px solid black; padding: 6px; align: center; background-color: rgb(137, 211, 127);">0.00</td>\
               <td style="width: 15px; height:10px; border-top: 1px solid black; padding: 6px;align: center;">#DIV/0!</td>\
             </tr>\
           </table>\
@@ -1333,10 +1433,10 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
             <tr style="width: 10%;height:2%;">\
               <td border-right="1"  style="width: 15px;height:10px;  padding: 6px; align: center;"></td>\
               <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">Total</td>\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+(target_15_total).toFixed(2)+'</td>\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+newProSalesForDayTotal+'</td>\
-              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+cumNewProductTotal+'</td>\
-              <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+totalPerSales.toFixed(2)+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+formatNumber(target_15_total)+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+formatNumber(newProSalesForDayTotal)+'</td>\
+              <td  border-right="1" style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+formatNumber(cumNewProductTotal)+'</td>\
+              <td style="width: 15px;height:10px;  padding: 6px; align: center; font-weight: bold;">'+formatNumber(totalPerSales)+'%'+'</td>\
             </tr>\
           </table>\
           <table  style="width: 100%; margin-top:20px; font-family: Arial, sans-serif; font-size: 11px; ">\
@@ -1379,9 +1479,9 @@ log.debug('dealer Addition And Deletion Year End Date:', addformattedFiscalEndDa
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+closerTotal+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+totalNumberOfDealersTotal+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+noOFDealerTotal+'</td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+grater_8_Total+'</td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+grater_4_To_7_Total+'</td>\
-              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+less_total+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+totalGroup3Count+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+totalGroup2Count+'</td>\
+              <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-right: 1px solid black; border-bottom: 1px solid black; font-weight: bold;">'+totalGroup1Count+'</td>\
               <td  style="width: 15px;height:10px;  padding: 6px; align: center; border-bottom: 1px solid black; font-weight: bold; border-right: 1px solid black;">'+sm_Wise_Total+'</td>\
             </tr>\
           </table>\
