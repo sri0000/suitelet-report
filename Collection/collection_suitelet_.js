@@ -315,7 +315,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                         "AND", 
                         ["salesrep","anyof",salesRepId], 
                         "AND", 
-                        ["trandate","within",formattedStartDate,formattedEndDate]
+                        ["trandate","within",formattedStartDate,formattedEndDate],
+                        "AND", 
+                        ["mainline","is","T"]
                      ],
 
                     columns:
@@ -334,7 +336,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     log.debug('x',salesRep)
                     var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
                     var total = result.getValue({name: "total",summary: "SUM"});
-                    var AmountLessthen30 = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0);
+                    var AmountLessthen30 = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0)/ 100000;
                     log.debug('subtotal',AmountLessthen30)
                     // Store the amount for the corresponding sales rep ID
                     lessthen30[salesRep] = AmountLessthen30;
@@ -359,7 +361,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                         "AND", 
                         ["salesrep", "anyof", salesRepId], 
                        "AND", 
-                       ["trandate","within",prev1formattedStartDate,prev1formattedEndDate]
+                       ["trandate","within",prev1formattedStartDate,prev1formattedEndDate],
+                       "AND", 
+                       ["mainline","is","T"]
                     ],
                     columns:
                     [
@@ -376,7 +380,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
                     var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
                     var total = result.getValue({name: "total",summary: "SUM"});
-                    var AmountLessthen60 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+                    var AmountLessthen60 = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0)/ 100000;
                     // Store the amount for the corresponding sales rep ID
                     lessthen60[salesRep] = AmountLessthen60;
         
@@ -402,7 +406,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                         "AND", 
                         ["salesrep", "anyof", salesRepId], 
                        "AND", 
-                       ["trandate","within",prev2formattedStartDate,prev2formattedEndDate]
+                       ["trandate","within",prev2formattedStartDate,prev2formattedEndDate],
+                       "AND", 
+                       ["mainline","is","T"]
                     ],
                     columns:
                     [
@@ -419,7 +425,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
                     var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
                     var total = result.getValue({name: "total",summary: "SUM"});
-                    var AmountLessthen90 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+                    var AmountLessthen90 = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0)/ 100000;
                     // Store the amount for the corresponding sales rep ID
                     lessthen90[salesRep] = AmountLessthen90;
         
@@ -444,7 +450,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                         "AND", 
                         ["salesrep", "anyof", salesRepId], 
                        "AND", 
-                       ["trandate","within",prev3formattedStartDate,prev3formattedEndDate]
+                       ["trandate","within",prev3formattedStartDate,prev3formattedEndDate],
+                       "AND", 
+                       ["mainline","is","T"]
                     ],
                     columns:
                     [
@@ -461,7 +469,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
                     var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
                     var total = result.getValue({name: "total",summary: "SUM"});
-                    var AmountLessthen180 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+                    var AmountLessthen180 =parseFloat( result.getValue({name: "formulacurrency",summary: "SUM"}) || 0)/ 100000;
                     // Store the amount for the corresponding sales rep ID
                     lessthen180[salesRep] = AmountLessthen180;
         
@@ -489,7 +497,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                          "AND", 
                          ["salesrep", "anyof", salesRepId], 
                         "AND", 
-                        ["trandate","within",prev4formattedStartDate,prev4formattedEndDate]
+                        ["trandate","within",prev4formattedStartDate,prev4formattedEndDate],
+                        "AND", 
+                        ["mainline","is","T"]
                      ],
                      columns:
                      [
@@ -506,7 +516,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
                     var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
                     var total = result.getValue({name: "total",summary: "SUM"});
-                    var Amountmore180 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+                    var Amountmore180 =parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0)/ 100000;
                      // Store the amount for the corresponding sales rep ID
                      morethen180[salesRep] = Amountmore180;
          
@@ -530,7 +540,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                      "AND", 
                      ["salesrep", "anyof", salesRepId], 
                      "AND",
-                     ["trandate", "on", today]
+                     ["trandate", "on", today],
+                     "AND", 
+                     ["mainline","is","T"]
                  ],
              columns: [
                 search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
@@ -549,7 +561,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
             var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
             var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
             var total = result.getValue({name: "total",summary: "SUM"});
-            var totalAmountForRep = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+            var totalAmountForRep = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0)/ 100000;
             
 
         // Store the amount for the corresponding sales rep ID
@@ -573,7 +585,9 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                             "AND", 
                             ["salesrep", "anyof", salesRepId], 
                             "AND",
-                            ["trandate", "within", formattedStartDate, formattedEndDate]
+                            ["trandate", "within", formattedStartDate, formattedEndDate],
+                            "AND", 
+                            ["mainline","is","T"]
                         ],
                     columns: [
                         search.createColumn({name: "salesrep",summary: "GROUP",label: "Sales Rep"}),
@@ -592,7 +606,7 @@ define(["N/record", "N/render", "N/search", "N/runtime", "N/file", "N/format"], 
                     var salesRep = result.getValue({name: "salesrep",summary: "GROUP"});
                     var taxTotal = result.getValue({name: "taxtotal",summary: "SUM"});
                     var total = result.getValue({name: "total",summary: "SUM"});
-                    var totalAmountForRep1 = result.getValue({name: "formulacurrency",summary: "SUM"}) || 0;
+                    var totalAmountForRep1 = parseFloat(result.getValue({name: "formulacurrency",summary: "SUM"}) || 0)/ 100000;
                     
   
                // Store the amount for the corresponding sales rep ID
